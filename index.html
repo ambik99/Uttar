@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Uttar (उत्तर) — CBSE Class 10 & 12 Exam Practice & Solutions</title>
-  <meta name="description" content="Uttar (उत्तर) - CBSE Class 10 & 12 interactive exam practice platform with MCQ, Assertion-Reason, Competency-based, Short/Long answers, Seen/Unseen passages (English, Hindi, Bengali), step-by-step solutions, concept links, and friend score comparison." />
+  <title>Uttar (उत्तर) — CBSE Class 10 & 12 AI Exam Practice, Chapter Notes & Diagrams</title>
+  <meta name="description" content="Uttar (उत्तर) - CBSE Class 10 & 12 AI-powered exam practice, chapter-wise tailored notes, topic definitions, examples, SVG diagrams, and friend score comparison." />
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -21,6 +21,12 @@
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .diagram-box svg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -33,6 +39,7 @@
     const Icon = ({ name, className = "w-5 h-5" }) => {
       const paths = {
         book: <><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></>,
+        notes: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></>,
         check: <><polyline points="20 6 9 17 4 12" /></>,
         checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></>,
         xCircle: <><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></>,
@@ -49,7 +56,9 @@
         chevronRight: <><polyline points="9 18 15 12 9 6" /></>,
         copy: <><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>,
         trash: <><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>,
-        globe: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>
+        globe: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
+        key: <><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" /></>,
+        layers: <><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></>
       };
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -95,6 +104,168 @@
       ]
     };
 
+    // --- NCERT Chapter Syllabus Directory for Tailored Notes ---
+    const CBSE_CHAPTERS = {
+      "10-math-std": [
+        "Ch 1: Real Numbers",
+        "Ch 2: Polynomials",
+        "Ch 3: Pair of Linear Equations in Two Variables",
+        "Ch 4: Quadratic Equations",
+        "Ch 5: Arithmetic Progressions",
+        "Ch 6: Triangles",
+        "Ch 7: Coordinate Geometry",
+        "Ch 8: Introduction to Trigonometry",
+        "Ch 9: Some Applications of Trigonometry",
+        "Ch 10: Circles",
+        "Ch 11: Areas Related to Circles",
+        "Ch 12: Surface Areas and Volumes",
+        "Ch 13: Statistics",
+        "Ch 14: Probability"
+      ],
+      "10-math-basic": [
+        "Ch 1: Real Numbers",
+        "Ch 2: Polynomials",
+        "Ch 3: Pair of Linear Equations in Two Variables",
+        "Ch 4: Quadratic Equations",
+        "Ch 5: Arithmetic Progressions",
+        "Ch 6: Triangles",
+        "Ch 7: Coordinate Geometry",
+        "Ch 8: Introduction to Trigonometry",
+        "Ch 10: Circles",
+        "Ch 13: Statistics",
+        "Ch 14: Probability"
+      ],
+      "10-science": [
+        "Ch 1: Chemical Reactions and Equations",
+        "Ch 2: Acids, Bases and Salts",
+        "Ch 3: Metals and Non-metals",
+        "Ch 4: Carbon and its Compounds",
+        "Ch 5: Life Processes",
+        "Ch 6: Control and Coordination",
+        "Ch 7: How do Organisms Reproduce?",
+        "Ch 8: Heredity",
+        "Ch 9: Light – Reflection and Refraction",
+        "Ch 10: The Human Eye and the Colourful World",
+        "Ch 11: Electricity",
+        "Ch 12: Magnetic Effects of Electric Current",
+        "Ch 13: Our Environment"
+      ],
+      "10-sst": [
+        "History Ch 1: The Rise of Nationalism in Europe",
+        "History Ch 2: Nationalism in India",
+        "Geography Ch 1: Resources and Development",
+        "Geography Ch 4: Agriculture",
+        "Pol. Science Ch 1: Power Sharing",
+        "Pol. Science Ch 2: Federalism",
+        "Economics Ch 1: Development",
+        "Economics Ch 2: Sectors of the Indian Economy"
+      ],
+      "10-eng": [
+        "First Flight: A Letter to God",
+        "First Flight: Nelson Mandela — Long Walk to Freedom",
+        "First Flight: Two Stories about Flying",
+        "First Flight: From the Diary of Anne Frank",
+        "First Flight: Glimpses of India",
+        "First Flight: The Sermon at Benares",
+        "Footprints Without Feet: A Triumph of Surgery",
+        "Footprints Without Feet: The Thief's Story",
+        "Grammar: Tenses, Modals & Reported Speech"
+      ],
+      "10-hindi-a": [
+        "क्षितिज: सूरदास के पद",
+        "क्षितिज: राम-लक्ष्मण-परशुराम संवाद",
+        "क्षितिज: नेताजी का चश्मा",
+        "क्षितिज: बालगोबिन भगत",
+        "क्षितिज: लखनवी अंदाज़",
+        "कृतिका: माता का अँचल",
+        "व्याकरण: रचना के आधार पर वाक्य भेद व वाच्य"
+      ],
+      "10-hindi-b": [
+        "स्पर्श: कबीर की साखी",
+        "स्पर्श: मीरा के पद",
+        "स्पर्श: बड़े भाई साहब",
+        "स्पर्श: तताँरा-वामीरो कथा",
+        "संचयन: हरिहर काका",
+        "व्याकरण: पदबंध व समास"
+      ],
+      "10-bengali": [
+        "গল্প: জ্ঞানচক্ষু (আশাপূর্ণা দেবী)",
+        "গল্প: বহুরূপী (সুবোধ ঘোষ)",
+        "গল্প: পথের দাবী (শরৎচন্দ্র চট্টোপাধ্যায়)",
+        "কবিতা: অসুখী একজন (পাবলো নেরুদা)",
+        "কবিতা: আয় আরো বেঁধে বেঁধে থাকি (শঙ্খ ঘোষ)",
+        "কবিতা: আফ্রিকা (রবীন্দ্রনাথ ঠাকুর)",
+        "নাটক: সিরাজদ্দৌলা (শচীন্দ্রনাথ সেনগুপ্ত)",
+        "ব্যাকরণ: কারক ও অকারক সম্পর্ক, সমাস"
+      ],
+      "12-phy": [
+        "Ch 1: Electric Charges and Fields",
+        "Ch 2: Electrostatic Potential and Capacitance",
+        "Ch 3: Current Electricity",
+        "Ch 4: Moving Charges and Magnetism",
+        "Ch 5: Magnetism and Matter",
+        "Ch 6: Electromagnetic Induction",
+        "Ch 7: Alternating Current",
+        "Ch 8: Electromagnetic Waves",
+        "Ch 9: Ray Optics and Optical Instruments",
+        "Ch 10: Wave Optics",
+        "Ch 11: Dual Nature of Radiation and Matter",
+        "Ch 12: Atoms",
+        "Ch 13: Nuclei",
+        "Ch 14: Semiconductor Electronics"
+      ],
+      "12-chem": [
+        "Ch 1: Solutions",
+        "Ch 2: Electrochemistry",
+        "Ch 3: Chemical Kinetics",
+        "Ch 4: The d- and f-Block Elements",
+        "Ch 5: Coordination Compounds",
+        "Ch 6: Haloalkanes and Haloarenes",
+        "Ch 7: Alcohols, Phenols and Ethers",
+        "Ch 8: Aldehydes, Ketones and Carboxylic Acids",
+        "Ch 9: Amines",
+        "Ch 10: Biomolecules"
+      ],
+      "12-math": [
+        "Ch 1: Relations and Functions",
+        "Ch 2: Inverse Trigonometric Functions",
+        "Ch 3: Matrices",
+        "Ch 4: Determinants",
+        "Ch 5: Continuity and Differentiability",
+        "Ch 6: Application of Derivatives",
+        "Ch 7: Integrals",
+        "Ch 8: Application of Integrals",
+        "Ch 9: Differential Equations",
+        "Ch 10: Vector Algebra",
+        "Ch 11: Three Dimensional Geometry",
+        "Ch 12: Linear Programming",
+        "Ch 13: Probability"
+      ],
+      "12-bio": [
+        "Ch 1: Sexual Reproduction in Flowering Plants",
+        "Ch 2: Human Reproduction",
+        "Ch 3: Reproductive Health",
+        "Ch 4: Principles of Inheritance and Variation",
+        "Ch 5: Molecular Basis of Inheritance",
+        "Ch 6: Evolution",
+        "Ch 7: Human Health and Disease",
+        "Ch 9: Biotechnology: Principles and Processes",
+        "Ch 11: Organisms and Populations",
+        "Ch 12: Ecosystem"
+      ]
+    };
+
+    function getChaptersForSubject(subject) {
+      if (CBSE_CHAPTERS[subject.id]) return CBSE_CHAPTERS[subject.id];
+      return [
+        `Unit 1: Foundations & Core Principles of ${subject.name}`,
+        `Unit 2: Analytical Frameworks & Applications`,
+        `Unit 3: Quantitative & Case-Based Problem Solving`,
+        `Unit 4: Contemporary Perspectives & Policy Evaluation`,
+        `Unit 5: Board Exam High-Weightage Synthesis`
+      ];
+    }
+
     const QUESTION_FORMATS = [
       { id: "mcq", label: "MCQ (1M)", desc: "4-option objective questions", marks: 1, section: "Section A" },
       { id: "ar", label: "Assertion / Reason (1M)", desc: "Statement A & Reason R evaluation", marks: 1, section: "Section A" },
@@ -103,7 +274,7 @@
       { id: "long", label: "Long Answer (5M)", desc: "Detailed 100–120 word analytical answer", marks: 5, section: "Section D" }
     ];
 
-    // --- Curated High-Fidelity CBSE Question Bank ---
+    // --- Curated High-Fidelity CBSE Question Bank (Offline Fallback) ---
     const QUESTION_BANK = {
       "10-math-std": [
         { type: "mcq", marks: 1, section: "Section A", topic: "Real Numbers & Euclid's Lemma", question: "If two positive integers a and b are written as a = x³y² and b = xy³, where x, y are prime numbers, then HCF(a, b) is:", options: ["xy", "xy²", "x³y³", "x²y²"], correctIndex: 1, explanation: "HCF is the product of the smallest power of each common prime factor. Here, smallest power of x is x¹ and smallest power of y is y², so HCF(a, b) = xy²." },
@@ -119,24 +290,6 @@
         { type: "short", marks: 3, section: "Section C", topic: "Life Processes — Human Heart Double Circulation", question: "Why is it necessary to separate oxygenated and deoxygenated blood in mammals and birds? Explain double circulation briefly.", modelAnswer: "1. Mammals and birds are warm-blooded animals with high energy needs to maintain a constant body temperature.\n2. Separating oxygenated and deoxygenated blood prevents mixing and ensures highly efficient oxygen supply to body tissues.\n3. Double circulation: Blood passes through the heart twice in one complete cycle — pulmonary circulation (heart to lungs and back) and systemic circulation (heart to body and back).", valuePoints: ["High energy demand for thermoregulation (1M)", "Prevention of mixing for efficient O2 delivery (1M)", "Definition of pulmonary & systemic circulation (1M)"] },
         { type: "long", marks: 5, section: "Section D", topic: "Carbon & Its Compounds — Ethanol & Ethanoic Acid", question: "Write the chemical equation for esterification and saponification reactions. How can ethanol and ethanoic acid be distinguished chemically?", modelAnswer: "1. Esterification: CH₃COOH + C₂H₅OH → CH₃COOC₂H₅ + H₂O (in presence of Conc. H₂SO₄, sweet-smelling ethyl ethanoate).\n2. Saponification: CH₃COOC₂H₅ + NaOH → CH₃COONa + C₂H₅OH.\n3. Chemical Test: Add sodium hydrogen carbonate (NaHCO₃) to both. Ethanoic acid produces brisk effervescence of CO₂ gas (turns lime water milky), whereas ethanol shows no reaction.", valuePoints: ["Balanced esterification equation with catalyst (1.5M)", "Balanced saponification equation (1.5M)", "Sodium bicarbonate test with observation (2M)"] }
       ],
-      "10-eng": [
-        { type: "mcq", marks: 1, section: "Section A (Reading)", topic: "Unseen Discursive Passage Comprehension", passageType: "Unseen Passage", passage: "Urban green spaces are no longer mere aesthetic luxuries; they act as vital thermal regulators in rapidly warming cities. Studies across Indian metros show that neighbourhoods with dense native tree canopies record ambient temperatures up to 3.5°C lower than concrete-dominated zones, while simultaneously recharging groundwater aquifers.", question: "According to the passage, what dual ecological function do native tree canopies perform in urban areas?", options: ["They reduce ambient heat and replenish groundwater.", "They replace public transport and increase property tax.", "They eliminate monsoon rainfall and raise concrete density.", "They restrict urban biodiversity to ornamental plants."], correctIndex: 0, explanation: "The passage explicitly mentions that dense native tree canopies lower ambient temperatures by up to 3.5°C and simultaneously recharge groundwater aquifers." },
-        { type: "competency", marks: 4, section: "Section C (Literature)", topic: "First Flight — A Letter to God (Seen Extract)", passageType: "Seen Passage", passage: "\"With a satisfied expression he regarded the field of ripe corn with its flowers, draped in a curtain of rain. But suddenly a strong wind began to blow and along with the rain very large hailstones began to fall. These truly did resemble new silver coins.\"", question: "Why did Lencho initially compare the raindrops to 'new coins', and how did the weather shift his mood immediately after?", options: ["He expected a bountiful harvest worth money; hailstones destroyed the entire crop.", "He wanted to collect silver for his sons; the wind blew his roof away.", "The postmaster promised him coins; the rain stopped too early.", "He was selling corn in the market; the hail melted instantly."], correctIndex: 0, explanation: "Lencho viewed the rain as prosperity because his ripe corn needed a downpour to yield a profitable harvest, but the sudden hailstorm flattened the entire field." },
-        { type: "short", marks: 3, section: "Section C (Literature)", topic: "Nelson Mandela: Long Walk to Freedom", question: "What does Mandela mean when he says he is 'simply the sum of all those African patriots' who had gone before him?", modelAnswer: "Mandela pays tribute to thousands of South African freedom fighters whose unimaginable sacrifices paved the way for the end of Apartheid. He feels pained that they could not live to witness the fruits of their struggle, acknowledging that his victory was built upon their courage.", valuePoints: ["Tribute to earlier freedom fighters' sacrifices (1.5M)", "Regret that they could not witness freedom (1.5M)"] },
-        { type: "long", marks: 5, section: "Section C (Literature)", topic: "The Sermon at Benares — Grief & Detachment", question: "How did Gautama Buddha help Kisa Gotami understand the universality of death and overcome her grief?", modelAnswer: "When Kisa Gotami begged Buddha to revive her dead son, he asked her to bring a handful of mustard seeds from a house where no one had ever lost a loved one. Going from door to door, she realized every family had suffered bereavement. She understood that death is common to all mortals and selfish grief only deepens suffering.", valuePoints: ["Mustard seed task condition (1.5M)", "Kisa Gotami's realization across households (2M)", "Buddha's teaching on acceptance & peace (1.5M)"] }
-      ],
-      "10-hindi-a": [
-        { type: "mcq", marks: 1, section: "खंड क (अपठित बोध)", topic: "अपठित गद्यांश — मातृभाषा और संवेदना", passageType: "Unseen Passage", passage: "मातृभाषा केवल संवाद का माध्यम नहीं, अपितु हमारी सांस्कृतिक स्मृति और संवेदनाओं की संवाहक होती है। जब कोई विद्यार्थी अपनी मातृभाषा में विचार करता है, तो उसकी मौलिक कल्पनाशक्ति और तार्किक समझ स्वाभाविक रूप से विकसित होती है।", question: "गद्यांश के अनुसार मातृभाषा में विचार करने से विद्यार्थी में क्या विकसित होता है?", options: ["मौलिक कल्पनाशक्ति और तार्किक समझ", "केवल विदेशी भाषाओं का ज्ञान", "रटने की प्रवृत्ति", "तकनीकी शब्दावली का अभाव"], correctIndex: 0, explanation: "गद्यांश में स्पष्ट उल्लेख है कि मातृभाषा में विचार करने से मौलिक कल्पनाशक्ति और तार्किक समझ स्वाभाविक रूप से विकसित होती है।" },
-        { type: "competency", marks: 4, section: "खंड ग (पठित बोध)", topic: "क्षितिज — नेताजी का चश्मा (पठित गद्यांश)", passageType: "Seen Passage", passage: "हालदार साहब को पानवाले द्वारा एक देशभक्त का इस तरह मज़ाक उड़ाया जाना अच्छा नहीं लगा। मुड़कर देखा तो अवाक् रह गए। एक बेहद बूढ़ा मरियल-सा लँगड़ा आदमी सिर पर गांधी टोपी और आँखों पर काला चश्मा लगाए एक हाथ में एक छोटी-सी संदूकची और दूसरे हाथ में एक बाँस पर टँगे बहुत-से चश्मे लिए अभी-अभी एक गली से निकला था।", question: "हालदार साहब कैप्टन चश्मेवाले को पहली बार देखकर अवाक् क्यों रह गए?", options: ["क्योंकि वे उसे कोई फ़ौजी या नेताजी का साथी समझ रहे थे, पर वह एक बूढ़ा मरियल फेरीवाला निकला।", "क्योंकि कैप्टन ने नेताजी की मूर्ति तोड़ दी थी।", "क्योंकि पानवाले ने चश्मा पहन रखा था।", "क्योंकि चौराहे पर कोई मूर्ति नहीं थी।"], correctIndex: 0, explanation: "नाम 'कैप्टन' सुनकर हालदार साहब ने किसी हट्टे-कट्टे भूतपूर्व सैनिक की कल्पना की थी, किंतु एक दुर्बल फेरीवाले के हृदय में असीम देशभक्ति देखकर वे चकित रह गए।" },
-        { type: "short", marks: 3, section: "खंड ग (पाठ्यपुस्तक)", topic: "सूरदास के पद — गोपियों की विरह वेदना", question: "गोपियों ने उद्धव से योग की शिक्षा कैसे लोगों को देने की बात कही है और क्यों?", modelAnswer: "गोपियों ने उद्धव से कहा कि वे योग की शिक्षा ऐसे लोगों को दें जिनके मन चंचल हैं और चकरी के समान घूमते रहते हैं। गोपियों का मन तो पहले ही श्रीकृष्ण के प्रेम में एकनिष्ठ और स्थिर है, इसलिए उन्हें योग-साधना की आवश्यकता नहीं है।", valuePoints: ["अस्थिर व चंचल मन वालों का उल्लेख (1.5M)", "गोपियों की कृष्ण-भक्ति की एकनिष्ठता (1.5M)"] },
-        { type: "long", marks: 5, section: "खंड ग (पाठ्यपुस्तक)", topic: "बालगोबिन भगत — सामाजिक रूढ़ियों का विरोध", question: "'बालगोबिन भगत' पाठ के आधार पर सिद्ध कीजिए कि भगत जी सच्चे अर्थों में एक समाज सुधारक थे।", modelAnswer: "1. बालगोबिन भगत गृहस्थ होते हुए भी साधु जैसा आचरण करते थे और बाह्याडंबरों से दूर रहते थे।\n2. अपने इकलौते पुत्र की मृत्यु पर उन्होंने शोक मनाने के बजाय आत्मा-परमात्मा के मिलन का उत्सव मनाया।\n3. उन्होंने अपनी पुत्रवधू से ही चिता को मुखाग्नि दिलवाई और सामाजिक विरोध की परवाह किए बिना उसके पुनर्विवाह का आदेश दिया।", valuePoints: ["बाह्याडंबर व रूढ़ियों का खंडन (1.5M)", "पुत्र की मृत्यु पर अलौकिक दृष्टिकोण (1.5M)", "पुत्रवधू से मुखाग्नि एवं पुनर्विवाह पहल (2M)"] }
-      ],
-      "10-bengali": [
-        { type: "mcq", marks: 1, section: "ক বিভাগ (অপঠিত বোধ)", topic: "অপঠিত গদ্যাংশ — বাংলার নদী ও জীবনযাত্রা", passageType: "Unseen Passage", passage: "বাংলার নদ-নদী কেবল জলধারার পথ নয়, এগুলি আবহমান কাল ধরে বাঙালির কৃষি, বাণিজ্য এবং লোকসংস্কৃতির প্রাণকেন্দ্র। বর্ষার পলিমাটি যেমন শস্যশ্যামলা প্রান্তর গড়ে তোলে, তেমনই ভাটিয়ালি ও সারি গানের সুরে নদীর সঙ্গে মানুষের আত্মিক যোগ প্রকাশ পায়।", question: "উদ্ধৃত গদ্যাংশ অনুসারে বাংলার নদ-নদী বাঙালির কোন দিকগুলির প্রাণকেন্দ্র?", options: ["কৃষি, বাণিজ্য এবং লোকসংস্কৃতি", "কেবলমাত্র শিল্পায়ন ও নগরায়ণ", "শুধুমাত্র সামুদ্রিক পর্যটন", "পার্বত্য খনিজ সম্পদ আহরণ"], correctIndex: 0, explanation: "গদ্যাংশে স্পষ্টভাবে বলা হয়েছে যে বাংলার নদ-নদী আবহমান কাল ধরে বাঙালির কৃষি, বাণিজ্য এবং লোকসংস্কৃতির প্রাণকেন্দ্র।" },
-        { type: "competency", marks: 4, section: "গ বিভাগ (পঠিত সাহিত্য)", topic: "সাহিত্য সঞ্চয়ন — জ্ঞানচক্ষু (পঠিত গদ্যাংশ)", passageType: "Seen Passage", passage: "\"পৃথিবীতে এমন অলৌকিক ঘটনাও ঘটে! তা হলে তপনের লেখা গল্প পত্রিকায় ছাপা হয়েছে! হাজার হাজার ছেলেমেয়ের হাতে ঘুরবে!\"", question: "তপনের কাছে কোন ঘটনাটি 'অলৌকিক' বলে মনে হয়েছিল এবং পরে কেন তার মন বিষণ্ণ হয়ে ওঠে?", options: ["'সন্ধ্যাতারা' পত্রিকায় নিজের গল্প ছাপা হওয়া অলৌকিক মনে হয়েছিল; কিন্তু গল্পটি পুরো বদলে দেওয়া হয়েছে দেখে সে বিষণ্ণ হয়।", "ছোটোমাসি তার খাতা হারিয়ে ফেলেছিলেন বলে।", "বাবা তাকে নতুন কলম কিনে দেননি বলে।", "স্কুলের পরীক্ষায় সে অকৃতকার্য হয়েছিল বলে।"], correctIndex: 0, explanation: "নিজের লেখা গল্প ছাপার অক্ষরে প্রকাশিত হতে দেখে তপন প্রথমে রোমাঞ্চিত হয়েছিল, কিন্তু ছোটোমেসো 'কারেকশন'-এর নামে গল্পটির মৌলিকত্ব সম্পূর্ণ বদলে দিয়েছেন দেখে তপন গভীরভাবে মর্মাহত হয়।" },
-        { type: "short", marks: 3, section: "গ বিভাগ (পঠিত সাহিত্য)", topic: "আয় আরো বেঁধে বেঁধে থাকি — শঙ্খ ঘোষ", question: "'আয় আরো বেঁধে বেঁধে থাকি' কবিতায় কবি কেন সমবেতভাবে ঐক্যবদ্ধ থাকার আহ্বান জানিয়েছেন?", modelAnswer: "সাম্রাজ্যবাদী আগ্রাসন, যুদ্ধ ও সামাজিক অস্থিরতায় সাধারণ মানুষের অস্তিত্ব আজ বিপন্ন। ডানদিকে ধ্বংস, বাঁয়ে গিরিখাদ এবং মাথায় বোমারু বিমানের আতঙ্কের মধ্যে একমাত্র পারস্পরিক ঐক্য ও সংহতিই মানুষকে রক্ষা করতে পারে—এই বিশ্বাস থেকেই কবি বেঁধে বেঁধে থাকার আহ্বান জানিয়েছেন।", valuePoints: ["বিপন্ন সময় ও যুদ্ধের ভয়াবহতার চিত্র (1.5M)", "মানবিক ঐক্য ও সংহতির প্রয়োজনীয়তা (1.5M)"] },
-        { type: "long", marks: 5, section: "গ বিভাগ (পঠিত সাহিত্য)", topic: "পথের দাবী — শরৎচন্দ্র চট্টোপাধ্যায়", question: "'পথের দাবী' গদ্যাংশ অবলম্বনে গিরীশ মহাপাত্রের ছদ্মবেশ ও চরিত্রবৈশিষ্ট্য বিশ্লেষণ করো।", modelAnswer: "১. গিরীশ মহাপাত্র প্রকৃতপক্ষে বিপ্লবী সব্যসাচী মল্লিকের ছদ্মবেশী রূপ।\n২. পুলিশকে বিভ্রান্ত করার জন্য তিনি বাহারি পোশাক, মাথায় নেবুর তেলের গন্ধ, পকেটে গাঁজার কলকে এবং কাশির অভিনয় করেছিলেন।\n৩. অপূর্ব ও নিমাইবাবুর সামনে অত্যন্ত নির্বিকার ও নিরীহ ভঙ্গিতে উত্তর দিয়ে তিনি অসামান্য প্রত্যুৎপন্নমতিত্ব ও আত্মনিয়ন্ত্রণের পরিচয় দেন।", valuePoints: ["সব্যসাচী মল্লিকের ছদ্মবেশের বর্ণনা (2M)", "পুলিশের চোখে ধুলো দেওয়ার কৌশল (1.5M)", "অসীম সাহস ও প্রত্যুৎপন্নমতিত্ব (1.5M)"] }
-      ],
       "12-phy": [
         { type: "mcq", marks: 1, section: "Section A", topic: "Electrostatics — Gauss's Law", question: "A point charge +q is placed at the centre of a cube of side L. The electric flux emerging from any one face of the cube is:", options: ["q / ε₀", "q / 6ε₀", "q / 4ε₀", "6q / ε₀"], correctIndex: 1, explanation: "By Gauss's Law, total flux through the closed cube is Φ = q / ε₀. By symmetry across 6 identical faces, flux through one face is q / 6ε₀." },
         { type: "ar", marks: 1, section: "Section A", topic: "Dual Nature of Radiation & Matter", assertion: "Photoelectric current increases linearly with an increase in intensity of incident light (above threshold frequency).", reason: "Higher intensity means a larger number of photons striking the metal surface per unit time, ejecting more photoelectrons.", options: ["Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.", "Both A and R are true but R is NOT the correct explanation of A.", "Assertion (A) is true but Reason (R) is false.", "Assertion (A) is false but Reason (R) is true."], correctIndex: 0, explanation: "In Einstein's quantum picture, one photon ejects one electron. Increasing intensity increases photon flux, thereby increasing photoelectron emission rate proportionally." },
@@ -145,6 +298,153 @@
         { type: "long", marks: 5, section: "Section E", topic: "Wave Optics — Young's Double Slit Experiment (YDSE)", question: "Derive the expression for fringe width in Young's Double Slit Experiment. How does fringe width change if (i) screen distance is doubled, and (ii) monochromatic red light is replaced by blue light?", modelAnswer: "1. Path difference at point P at distance y from central maxima: Δx = y·d / D.\n2. For bright fringes, y·d / D = nλ => yₙ = nλD / d.\n3. Fringe width β = yₙ₊₁ - yₙ = λD / d.\n4. Effects: (i) If D is doubled, β doubles. (ii) Since λ_blue < λ_red, fringe width β decreases.", valuePoints: ["Path difference derivation Δx = yd/D (2M)", "Fringe width β = λD/d formula (1M)", "Effect of doubling D & changing wavelength (2M)"] }
       ]
     };
+
+    // --- Curated Rich Chapter Notes with SVG Diagrams (Instant Offline + AI Enhancement) ---
+    const CURATED_CHAPTER_NOTES = {
+      "10-science|Ch 9: Light – Reflection and Refraction": {
+        chapterSummary: "Covers laws of reflection, spherical mirror image formation, mirror formula, Snell's law of refraction, refractive index, spherical lenses, and lens power.",
+        topics: [
+          {
+            title: "1. Image Formation by a Concave Mirror (Object beyond C)",
+            definition: "A concave mirror is a spherical mirror whose reflecting surface is curved inwards. When an object is placed beyond the centre of curvature (C), light rays parallel to the principal axis converge at the principal focus (F) after reflection, forming a real, inverted, and diminished image between F and C.",
+            keyFormula: "1/f = 1/v + 1/u   |   Magnification (m) = -v/u = h'/h",
+            example: "If an object of height 4 cm is placed at u = -30 cm in front of a concave mirror of focal length f = -10 cm, then 1/v = 1/(-10) - 1/(-30) = -2/30 => v = -15 cm (real, inverted, between F and C) and m = -(-15)/(-30) = -0.5 (height = 2 cm).",
+            examTip: "Always apply the New Cartesian Sign Convention: u is always negative, and f is negative for concave mirrors.",
+            diagramCaption: "Ray Diagram: Concave Mirror forming a real, inverted image A'B' between F and C.",
+            svgDiagram: `<svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
+              <rect width="420" height="190" rx="12" fill="#f8fafc"/>
+              <line x1="20" y1="105" x2="390" y2="105" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <path d="M 330 25 Q 365 105 330 180" fill="none" stroke="#1e293b" stroke-width="3.5"/>
+              <line x1="336" y1="30" x2="344" y2="25" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="344" y1="65" x2="352" y2="60" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="348" y1="105" x2="356" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+              <line x1="344" y1="145" x2="352" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
+              <circle cx="347" cy="105" r="3" fill="#0f172a"/><text x="352" y="120" font-size="11" font-weight="bold" fill="#0f172a">P</text>
+              <circle cx="265" cy="105" r="3" fill="#dc2626"/><text x="261" y="122" font-size="11" font-weight="bold" fill="#dc2626">F</text>
+              <circle cx="185" cy="105" r="3" fill="#2563eb"/><text x="181" y="122" font-size="11" font-weight="bold" fill="#2563eb">C</text>
+              <line x1="115" y1="105" x2="115" y2="55" stroke="#16a34a" stroke-width="3"/>
+              <polygon points="115,50 110,60 120,60" fill="#16a34a"/>
+              <text x="108" y="45" font-size="11" font-weight="bold" fill="#16a34a">A</text>
+              <text x="108" y="120" font-size="11" font-weight="bold" fill="#16a34a">B</text>
+              <line x1="115" y1="55" x2="342" y2="55" stroke="#ef4444" stroke-width="1.8"/>
+              <line x1="342" y1="55" x2="215" y2="138" stroke="#ef4444" stroke-width="1.8"/>
+              <line x1="115" y1="55" x2="255" y2="147" stroke="#2563eb" stroke-width="1.8"/>
+              <line x1="232" y1="105" x2="232" y2="128" stroke="#9333ea" stroke-width="2.5"/>
+              <polygon points="232,133 228,124 236,124" fill="#9333ea"/>
+              <text x="225" y="146" font-size="10" font-weight="bold" fill="#9333ea">A' (Real &amp; Inverted)</text>
+            </svg>`
+          },
+          {
+            title: "2. Refraction Through a Rectangular Glass Slab & Snell's Law",
+            definition: "Refraction is the bending of light when it travels obliquely from one transparent medium to another due to a change in the speed of light. According to Snell's Law, the ratio of sine of angle of incidence (i) to sine of angle of refraction (r) is a constant called the refractive index (n₂₁).",
+            keyFormula: "sin i / sin r = n₂₁ = v₁ / v₂ = c / v",
+            example: "Light enters crown glass (n = 1.5) from air (c = 3 × 10⁸ m/s). Speed of light in glass v = c / n = (3 × 10⁸) / 1.5 = 2 × 10⁸ m/s. The emergent ray exits parallel to the incident ray but shifted sideways (lateral displacement).",
+            examTip: "In a rectangular glass slab, angle of incidence (∠i) equals angle of emergence (∠e), so net angular deviation is zero.",
+            diagramCaption: "Refraction & Lateral Displacement across an Air-Glass-Air Interface.",
+            svgDiagram: `<svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
+              <rect width="420" height="190" rx="12" fill="#f8fafc"/>
+              <rect x="110" y="55" width="200" height="75" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+              <text x="175" y="96" font-size="12" font-weight="bold" fill="#1e40af">Glass Slab (n = 1.5)</text>
+              <line x1="165" y1="20" x2="165" y2="165" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+              <line x1="115" y1="18" x2="165" y2="55" stroke="#dc2626" stroke-width="2.2"/>
+              <text x="125" y="42" font-size="11" font-weight="bold" fill="#dc2626">Incident Ray (i)</text>
+              <line x1="165" y1="55" x2="215" y2="130" stroke="#059669" stroke-width="2.2"/>
+              <text x="168" y="75" font-size="11" font-weight="bold" fill="#059669">r &lt; i</text>
+              <line x1="215" y1="130" x2="265" y2="167" stroke="#dc2626" stroke-width="2.2"/>
+              <line x1="165" y1="55" x2="315" y2="166" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="3 3"/>
+              <text x="268" y="158" font-size="10" font-weight="bold" fill="#475569">Emergent Ray (e = i)</text>
+            </svg>`
+          }
+        ]
+      },
+      "10-science|Ch 11: Electricity": {
+        chapterSummary: "Covers electric current, potential difference, Ohm's law, factors affecting resistance, series and parallel resistor combinations, Joule's law of heating, and electric power.",
+        topics: [
+          {
+            title: "1. Ohm's Law & V–I Characteristics",
+            definition: "Ohm's Law states that the electric current (I) flowing through a metallic conductor is directly proportional to the potential difference (V) applied across its ends, provided the temperature and physical conditions remain constant.",
+            keyFormula: "V = I × R   |   R = ρ (L / A)",
+            example: "A nichrome wire of resistance 12 Ω is connected across a 6 V battery. Current I = V / R = 6 / 12 = 0.5 A. If the wire is stretched to double its length (L' = 2L, A' = A/2), new resistance becomes R' = 4R = 48 Ω.",
+            examTip: "The slope of a V–I graph (with V on y-axis and I on x-axis) gives Resistance R; if I is on y-axis, slope equals 1/R.",
+            diagramCaption: "Circuit Diagram for Ohm's Law Verification & Linear V-I Graph.",
+            svgDiagram: `<svg viewBox="0 0 420 185" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
+              <rect width="420" height="185" rx="12" fill="#f8fafc"/>
+              <rect x="35" y="35" width="170" height="110" fill="none" stroke="#1e293b" stroke-width="2"/>
+              <rect x="90" y="25" width="60" height="20" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+              <text x="103" y="39" font-size="11" font-weight="bold" fill="#92400e">R (Ω)</text>
+              <circle cx="120" cy="80" r="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+              <text x="115" y="84" font-size="12" font-weight="bold" fill="#1d4ed8">V</text>
+              <line x1="90" y1="35" x2="90" y2="80" stroke="#2563eb" stroke-width="1.5"/>
+              <line x1="90" y1="80" x2="106" y2="80" stroke="#2563eb" stroke-width="1.5"/>
+              <line x1="150" y1="35" x2="150" y2="80" stroke="#2563eb" stroke-width="1.5"/>
+              <line x1="134" y1="80" x2="150" y2="80" stroke="#2563eb" stroke-width="1.5"/>
+              <circle cx="205" cy="90" r="14" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+              <text x="200" y="94" font-size="12" font-weight="bold" fill="#15803d">A</text>
+              <text x="85" y="162" font-size="11" font-weight="bold" fill="#334155">Battery + Key (K)</text>
+              <line x1="255" y1="145" x2="395" y2="145" stroke="#334155" stroke-width="2"/>
+              <line x1="255" y1="145" x2="255" y2="25" stroke="#334155" stroke-width="2"/>
+              <line x1="255" y1="145" x2="380" y2="35" stroke="#dc2626" stroke-width="2.5"/>
+              <text x="240" y="35" font-size="11" font-weight="bold" fill="#334155">V</text>
+              <text x="385" y="160" font-size="11" font-weight="bold" fill="#334155">I</text>
+              <text x="295" y="75" font-size="11" font-weight="bold" fill="#dc2626">Slope = R</text>
+            </svg>`
+          }
+        ]
+      },
+      "10-math-std|Ch 8: Introduction to Trigonometry": {
+        chapterSummary: "Introduces trigonometric ratios of acute angles in a right triangle, values at standard angles (0°, 30°, 45°, 60°, 90°), and fundamental Pythagorean trigonometric identities.",
+        topics: [
+          {
+            title: "1. Trigonometric Ratios & Fundamental Identities",
+            definition: "In a right-angled triangle ABC right-angled at B, the trigonometric ratios of acute angle θ relate the lengths of Perpendicular (P), Base (B), and Hypotenuse (H). Fundamental identities hold true for all permissible values of θ.",
+            keyFormula: "sin θ = P/H, cos θ = B/H, tan θ = P/B   |   sin²θ + cos²θ = 1   |   1 + tan²θ = sec²θ",
+            example: "Given tan A = 4/3, take P = 4k and B = 3k. By Pythagoras theorem, H = √((4k)² + (3k)²) = 5k. Therefore, sin A = 4/5 and cos A = 3/5, verifying sin²A + cos²A = 16/25 + 9/25 = 1.",
+            examTip: "Write 'P = 4k, B = 3k' using positive constant k in 3-mark CBSE questions to avoid losing 0.5 marks for ratio notation.",
+            diagramCaption: "Right Triangle Reference for Angle θ (Perpendicular, Base, Hypotenuse).",
+            svgDiagram: `<svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
+              <rect width="400" height="180" rx="12" fill="#f8fafc"/>
+              <polygon points="90,145 290,145 290,35" fill="#eef2ff" stroke="#4f46e5" stroke-width="2.5"/>
+              <rect x="276" y="131" width="14" height="14" fill="none" stroke="#4f46e5" stroke-width="1.8"/>
+              <path d="M 122 145 A 32 32 0 0 0 116 130" fill="none" stroke="#dc2626" stroke-width="2"/>
+              <text x="128" y="138" font-size="13" font-weight="bold" fill="#dc2626">θ</text>
+              <text x="75" y="158" font-size="12" font-weight="bold" fill="#1e293b">A</text>
+              <text x="295" y="158" font-size="12" font-weight="bold" fill="#1e293b">B (90°)</text>
+              <text x="295" y="35" font-size="12" font-weight="bold" fill="#1e293b">C</text>
+              <text x="165" y="165" font-size="11" font-weight="bold" fill="#059669">Base (B) — Adjacent</text>
+              <text x="298" y="95" font-size="11" font-weight="bold" fill="#2563eb">Perpendicular (P)</text>
+              <text x="135" y="78" font-size="11" font-weight="bold" fill="#7c3aed" transform="rotate(-29 135 78)">Hypotenuse (H)</text>
+            </svg>`
+          }
+        ]
+      }
+    };
+
+    // --- Gemini API Live Structured Output Helper ---
+    async function callGeminiStructured({ apiKey, model, prompt, responseSchema }) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema,
+            temperature: 0.35
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini API Error (${res.status}): ${errText}`);
+      }
+
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error("Empty structured response received from Gemini API.");
+      return JSON.parse(rawText);
+    }
 
     // --- Topic-Targeted Internet Study Links Generator ---
     function getTopicConceptLinks(subject, topic) {
@@ -156,41 +456,16 @@
         ? "https://cbseacademic.nic.in/SQP_CLASSX_2024-25.html"
         : "https://cbseacademic.nic.in/SQP_CLASSXII_2024-25.html";
       return [
-        {
-          title: `NCERT Official Chapter & Exemplar — ${topic}`,
-          source: "NCERT (ncert.nic.in)",
-          tag: "Official Textbook",
-          url: `https://www.google.com/search?q=${ncertQuery}`
-        },
-        {
-          title: `DIKSHA Interactive e-Content & Video Lesson`,
-          source: "DIKSHA Govt. of India",
-          tag: "Interactive Module",
-          url: `https://www.google.com/search?q=${dikshaQuery}`
-        },
-        {
-          title: `Khan Academy India — Step-by-Step Concept Practice`,
-          source: "Khan Academy",
-          tag: "Guided Practice",
-          url: `https://www.khanacademy.org/search?page_search_query=${q}`
-        },
-        {
-          title: `CBSE Academic Sample Papers & Marking Scheme (${subject.code})`,
-          source: "CBSE Academic",
-          tag: "Board Blueprint",
-          url: cbseUrl
-        },
-        {
-          title: `YouTube NCERT Concept & PYQ Walkthrough`,
-          source: "YouTube Education",
-          tag: "Video Solution",
-          url: `https://www.youtube.com/results?search_query=${q}+NCERT+explanation`
-        }
+        { title: `NCERT Official Chapter & Exemplar — ${topic}`, source: "NCERT (ncert.nic.in)", tag: "Official Textbook", url: `https://www.google.com/search?q=${ncertQuery}` },
+        { title: `DIKSHA Interactive e-Content & Video Lesson`, source: "DIKSHA Govt. of India", tag: "Interactive Module", url: `https://www.google.com/search?q=${dikshaQuery}` },
+        { title: `Khan Academy India — Step-by-Step Concept Practice`, source: "Khan Academy", tag: "Guided Practice", url: `https://www.khanacademy.org/search?page_search_query=${q}` },
+        { title: `CBSE Academic Sample Papers & Marking Scheme (${subject.code})`, source: "CBSE Academic", tag: "Board Blueprint", url: cbseUrl },
+        { title: `YouTube NCERT Concept & PYQ Walkthrough`, source: "YouTube Education", tag: "Video Solution", url: `https://www.youtube.com/results?search_query=${q}+NCERT+explanation` }
       ];
     }
 
-    // --- Smart Questionnaire Generator (Respects CBSE Max Question Limit, Formats & Passages) ---
-    function generateQuestionnaire({ classLevel, subject, count, selectedFormats, passageMode }) {
+    // --- Offline Fallback Questionnaire Generator ---
+    function generateOfflineQuestionnaire({ classLevel, subject, count, selectedFormats, passageMode }) {
       const safeCount = Math.min(Math.max(1, count), subject.maxQuestions);
       const baseBank = QUESTION_BANK[subject.id] || [];
       const activeFormats = selectedFormats.length > 0 ? selectedFormats : ["mcq", "ar", "competency", "short", "long"];
@@ -203,7 +478,6 @@
         }
         return true;
       });
-
       if (filtered.length === 0) filtered = baseBank.length > 0 ? baseBank : [];
 
       const generated = [];
@@ -221,15 +495,6 @@
           const fmtId = activeFormats[i % activeFormats.length];
           const fmtMeta = QUESTION_FORMATS.find((f) => f.id === fmtId) || QUESTION_FORMATS[0];
           const isSubjective = fmtId === "short" || fmtId === "long";
-          const langPassage =
-            subject.isLanguage
-              ? passageMode === "seen"
-                ? `Seen Textbook Extract (${subject.name}): Read the prescribed prose/poetry extract carefully and analyze the author's central theme and literary devices.`
-                : `Unseen Comprehension Passage (${subject.name}): Read the following contemporary passage on sustainable innovation and critical thinking in modern India.`
-              : fmtId === "competency"
-              ? `Case-Based Competency Scenario (${subject.name}): A real-world data observation is recorded during a standard CBSE laboratory/field investigation.`
-              : null;
-
           generated.push({
             id: `${subject.id}-q-${i + 1}`,
             qNumber: i + 1,
@@ -238,60 +503,114 @@
             section: fmtMeta.section,
             topic: `${subject.name} Core Unit ${(i % 5) + 1}`,
             passageType: subject.isLanguage ? (passageMode === "seen" ? "Seen Passage" : "Unseen Passage") : fmtId === "competency" ? "Case Study" : null,
-            passage: langPassage,
+            passage: subject.isLanguage || fmtId === "competency" ? `CBSE Competency / Reading Extract for ${subject.name} (Unit ${(i % 5) + 1}).` : null,
             assertion: fmtId === "ar" ? `In ${subject.name}, fundamental principles of Unit ${(i % 4) + 1} govern standard experimental outcomes.` : null,
             reason: fmtId === "ar" ? `CBSE competency guidelines emphasize conceptual cause-and-effect reasoning over rote memorization.` : null,
-            question:
-              fmtId === "ar"
-                ? "Evaluate Assertion (A) and Reason (R) carefully:"
-                : isSubjective
-                ? `Explain the core principle and real-world application of ${subject.name} (Unit ${(i % 5) + 1}) with suitable examples as per CBSE Marking Scheme.`
-                : `Which of the following statements best aligns with the NCERT Class ${classLevel} ${subject.name} framework for Unit ${(i % 5) + 1}?`,
-            options: isSubjective
-              ? null
-              : fmtId === "ar"
-              ? [
-                  "Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.",
-                  "Both A and R are true but R is NOT the correct explanation of A.",
-                  "Assertion (A) is true but Reason (R) is false.",
-                  "Assertion (A) is false but Reason (R) is true."
-                ]
-              : [
-                  "Direct proportional relationship verified under NCERT standard conditions",
-                  "Inverse variation independent of boundary constraints",
-                  "Constant invariant state across all non-equilibrium phases",
-                  "None of the above under standard CBSE guidelines"
-                ],
+            question: fmtId === "ar" ? "Evaluate Assertion (A) and Reason (R) carefully:" : isSubjective ? `Explain the core principle and real-world application of ${subject.name} (Unit ${(i % 5) + 1}) with suitable examples as per CBSE Marking Scheme.` : `Which statement best aligns with NCERT Class ${classLevel} ${subject.name} for Unit ${(i % 5) + 1}?`,
+            options: isSubjective ? null : fmtId === "ar" ? [
+              "Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.",
+              "Both A and R are true but R is NOT the correct explanation of A.",
+              "Assertion (A) is true but Reason (R) is false.",
+              "Assertion (A) is false but Reason (R) is true."
+            ] : [
+              "Direct proportional relationship verified under NCERT standard conditions",
+              "Inverse variation independent of boundary constraints",
+              "Constant invariant state across all non-equilibrium phases",
+              "None of the above under standard CBSE guidelines"
+            ],
             correctIndex: isSubjective ? null : 0,
             explanation: `As per NCERT Class ${classLevel} ${subject.name} guidelines, standard boundary conditions establish a direct conceptual relationship for Unit ${(i % 5) + 1}.`,
-            modelAnswer: isSubjective
-              ? `1. Core Definition: State the fundamental NCERT definition clearly.\n2. Analytical Explanation: Break down the mechanism/derivation step-by-step.\n3. Conclusion/Example: Conclude with a textbook-verified application.`
-              : null,
-            valuePoints: isSubjective
-              ? [
-                  "Accurate NCERT definition & terminology (1M)",
-                  "Step-by-step reasoning / diagram / example (2M)",
-                  ...(fmtId === "long" ? ["Structured synthesis & final conclusion (2M)"] : [])
-                ]
-              : null
+            modelAnswer: isSubjective ? `1. Core Definition: State the fundamental NCERT definition clearly.\n2. Analytical Explanation: Break down the mechanism/derivation step-by-step.\n3. Conclusion/Example: Conclude with a textbook-verified application.` : null,
+            valuePoints: isSubjective ? ["Accurate NCERT definition & terminology (1M)", "Step-by-step reasoning / diagram / example (2M)"] : null
           });
         }
       }
       return generated;
     }
 
+    // --- Offline Fallback Chapter Notes Generator ---
+    function generateOfflineChapterNotes(classLevel, subject, chapter) {
+      const key = `${subject.id}|${chapter}`;
+      if (CURATED_CHAPTER_NOTES[key]) return CURATED_CHAPTER_NOTES[key];
+
+      const cleanTitle = chapter.replace(/^Ch \d+:\s*|^Unit \d+:\s*/i, "");
+      return {
+        chapterSummary: `Comprehensive CBSE Class ${classLevel} NCERT revision notes for ${chapter} (${subject.name}, Code ${subject.code}), structured for 1M–5M board exam questions.`,
+        topics: [
+          {
+            title: `1. Core Concept & Fundamental Principle of ${cleanTitle}`,
+            definition: `In CBSE Class ${classLevel} ${subject.name}, ${cleanTitle} establishes the foundational rules, relationships, and structural properties governing how variables or systems interact under NCERT-defined boundary conditions.`,
+            keyFormula: `Standard NCERT Relation & Law — ${cleanTitle}`,
+            example: `Board Application Example: Consider a standard CBSE case in ${cleanTitle} where primary parameters are doubled while keeping secondary constraints constant. Applying the governing principle yields a predictable, proportional board-exam outcome.`,
+            examTip: `Always underline key NCERT terminology and state the governing law before substituting numerical or textual values.`,
+            diagramCaption: `Conceptual Block & Relationship Diagram for ${cleanTitle}`,
+            svgDiagram: `<svg viewBox="0 0 420 175" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
+              <rect width="420" height="175" rx="12" fill="#f8fafc"/>
+              <rect x="25" y="55" width="110" height="60" rx="10" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+              <text x="42" y="82" font-size="11" font-weight="bold" fill="#312e81">Input / Cause</text>
+              <text x="38" y="98" font-size="10" fill="#4338ca">(NCERT Axiom)</text>
+              <line x1="135" y1="85" x2="165" y2="85" stroke="#4f46e5" stroke-width="2.5"/>
+              <polygon points="170,85 160,80 160,90" fill="#4f46e5"/>
+              <rect x="172" y="45" width="115" height="80" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+              <text x="184" y="80" font-size="11" font-weight="bold" fill="#92400e">Core Mechanism</text>
+              <text x="184" y="98" font-size="10" fill="#b45309">${cleanTitle.slice(0, 18)}</text>
+              <line x1="287" y1="85" x2="315" y2="85" stroke="#059669" stroke-width="2.5"/>
+              <polygon points="320,85 310,80 310,90" fill="#059669"/>
+              <rect x="322" y="55" width="80" height="60" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+              <text x="334" y="82" font-size="11" font-weight="bold" fill="#14532d">Result</text>
+              <text x="332" y="98" font-size="10" fill="#15803d">(Verified)</text>
+            </svg>`
+          },
+          {
+            title: `2. Analytical Classification & Exam Problem Framework`,
+            definition: `Questions from ${cleanTitle} in CBSE board exams test both conceptual distinction (Assertion-Reason / 1M MCQs) and multi-step analytical derivation (3M Short & 5M Long Answers).`,
+            keyFormula: `Step 1: Given Data → Step 2: Governing Formula → Step 3: Unit & Conclusion`,
+            example: `When comparing two contrasting cases within ${cleanTitle}, tabulate at least three distinct points (Definition, Mechanism, and Real-World Example) to secure full marks in 3-mark CBSE questions.`,
+            examTip: `Add your Gemini API Key in the top bar to generate custom, deep-dive AI notes, worked numericals, and tailored SVG diagrams for any chapter!`,
+            diagramCaption: `CBSE 3-Step Structured Answer Blueprint`,
+            svgDiagram: `<svg viewBox="0 0 420 150" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
+              <rect width="420" height="150" rx="12" fill="#f8fafc"/>
+              <rect x="20" y="35" width="115" height="75" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+              <text x="34" y="65" font-size="11" font-weight="bold" fill="#1e3a8a">1. Definition</text>
+              <text x="34" y="83" font-size="10" fill="#1d4ed8">NCERT Keywords</text>
+              <rect x="152" y="35" width="115" height="75" rx="10" fill="#f3e8ff" stroke="#9333ea" stroke-width="2"/>
+              <text x="166" y="65" font-size="11" font-weight="bold" fill="#581c87">2. Diagram / Law</text>
+              <text x="166" y="83" font-size="10" fill="#7e22ce">Labelled Sketch</text>
+              <rect x="284" y="35" width="115" height="75" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+              <text x="298" y="65" font-size="11" font-weight="bold" fill="#14532d">3. Example</text>
+              <text x="298" y="83" font-size="10" fill="#15803d">Verified Output</text>
+            </svg>`
+          }
+        ]
+      };
+    }
+
     // --- Main Application ---
     function UttarApp() {
       const [activeTab, setActiveTab] = useState("practice");
       const [studentName, setStudentName] = useState(() => localStorage.getItem("uttar_student_name") || "Aarav Sharma");
+      const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem("uttar_gemini_key") || "");
+      const [geminiModel, setGeminiModel] = useState(() => localStorage.getItem("uttar_gemini_model") || "gemini-2.5-flash");
+      const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+
       const [classLevel, setClassLevel] = useState("10");
       const [streamFilter, setStreamFilter] = useState("All");
-      const [selectedSubjectId, setSelectedSubjectId] = useState("10-math-std");
+      const [selectedSubjectId, setSelectedSubjectId] = useState("10-science");
       const [selectedFormats, setSelectedFormats] = useState(["mcq", "ar", "competency", "short", "long"]);
       const [passageMode, setPassageMode] = useState("both");
       const [questionCount, setQuestionCount] = useState(5);
       const [mobileConfigOpen, setMobileConfigOpen] = useState(false);
+      const [isGeneratingPaper, setIsGeneratingPaper] = useState(false);
+      const [generationStatus, setGenerationStatus] = useState("");
 
+      // Chapter Notes & Diagrams State
+      const [selectedChapter, setSelectedChapter] = useState("");
+      const [chapterNotesCache, setChapterNotesCache] = useState({});
+      const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
+      const [activeTopicIdx, setActiveTopicIdx] = useState(0);
+      const [notesError, setNotesError] = useState("");
+
+      // Active Exam State
       const [activePaper, setActivePaper] = useState(null);
       const [currentIdx, setCurrentIdx] = useState(0);
       const [userAnswers, setUserAnswers] = useState({});
@@ -299,33 +618,17 @@
       const [secondsElapsed, setSecondsElapsed] = useState(0);
       const [paletteDrawerOpen, setPaletteDrawerOpen] = useState(false);
 
+      // Saved Papers & Scorecard State
       const [savedPapers, setSavedPapers] = useState(() => {
-        try {
-          return JSON.parse(localStorage.getItem("uttar_saved_papers") || "[]");
-        } catch {
-          return [];
-        }
+        try { return JSON.parse(localStorage.getItem("uttar_saved_papers") || "[]"); } catch { return []; }
       });
       const [activeResultId, setActiveResultId] = useState(null);
       const [solutionFilter, setSolutionFilter] = useState("all");
       const [copyFeedback, setCopyFeedback] = useState("");
       const [friendCodeInput, setFriendCodeInput] = useState("");
       const [friendComparisons, setFriendComparisons] = useState(() => {
-        try {
-          return JSON.parse(localStorage.getItem("uttar_friend_comparisons") || "[]");
-        } catch {
-          return [
-            {
-              id: "demo-friend-1",
-              name: "Ananya Verma",
-              subjectName: "Mathematics (Standard)",
-              classLevel: "10",
-              score: 12,
-              maxMarks: 14,
-              accuracy: 86,
-              timeTaken: 420
-            }
-          ];
+        try { return JSON.parse(localStorage.getItem("uttar_friend_comparisons") || "[]"); } catch {
+          return [{ id: "demo-friend-1", name: "Ananya Verma", subjectName: "Science", classLevel: "10", score: 12, maxMarks: 14, accuracy: 86, timeTaken: 420 }];
         }
       });
 
@@ -334,6 +637,7 @@
         () => currentSubjects.find((s) => s.id === selectedSubjectId) || currentSubjects[0],
         [currentSubjects, selectedSubjectId]
       );
+      const subjectChapters = useMemo(() => getChaptersForSubject(selectedSubject), [selectedSubject]);
 
       useEffect(() => {
         const list = CBSE_SUBJECTS[classLevel];
@@ -347,19 +651,18 @@
         if (selectedSubject && questionCount > selectedSubject.maxQuestions) {
           setQuestionCount(selectedSubject.maxQuestions);
         }
+        const chaps = getChaptersForSubject(selectedSubject);
+        if (chaps.length > 0 && !chaps.includes(selectedChapter)) {
+          setSelectedChapter(chaps[0]);
+          setActiveTopicIdx(0);
+        }
       }, [selectedSubject]);
 
-      useEffect(() => {
-        localStorage.setItem("uttar_student_name", studentName);
-      }, [studentName]);
-
-      useEffect(() => {
-        localStorage.setItem("uttar_saved_papers", JSON.stringify(savedPapers));
-      }, [savedPapers]);
-
-      useEffect(() => {
-        localStorage.setItem("uttar_friend_comparisons", JSON.stringify(friendComparisons));
-      }, [friendComparisons]);
+      useEffect(() => { localStorage.setItem("uttar_student_name", studentName); }, [studentName]);
+      useEffect(() => { localStorage.setItem("uttar_gemini_key", geminiApiKey); }, [geminiApiKey]);
+      useEffect(() => { localStorage.setItem("uttar_gemini_model", geminiModel); }, [geminiModel]);
+      useEffect(() => { localStorage.setItem("uttar_saved_papers", JSON.stringify(savedPapers)); }, [savedPapers]);
+      useEffect(() => { localStorage.setItem("uttar_friend_comparisons", JSON.stringify(friendComparisons)); }, [friendComparisons]);
 
       useEffect(() => {
         if (activeTab !== "exam") return;
@@ -379,20 +682,105 @@
         );
       };
 
-      const handleStartExam = () => {
+      // --- OPTION B: Live Gemini AI Question Generation with Structured Output ---
+      const handleStartExam = async () => {
         const cappedCount = Math.min(questionCount, selectedSubject.maxQuestions);
-        const questions = generateQuestionnaire({
-          classLevel,
-          subject: selectedSubject,
-          count: cappedCount,
-          selectedFormats,
-          passageMode
-        });
+        setIsGeneratingPaper(true);
+        setGenerationStatus(
+          geminiApiKey.trim()
+            ? `Generating ${cappedCount} live CBSE Class ${classLevel} ${selectedSubject.name} questions via Gemini AI...`
+            : `Building ${cappedCount} CBSE Class ${classLevel} ${selectedSubject.name} questions...`
+        );
+
+        let questions = [];
+        let sourceMode = "Built-in CBSE Bank";
+
+        if (geminiApiKey.trim()) {
+          try {
+            const formatNames = selectedFormats
+              .map((id) => QUESTION_FORMATS.find((f) => f.id === id)?.label || id)
+              .join(", ");
+            const langInstruction = selectedSubject.isLanguage
+              ? `This is a language subject (${selectedSubject.name}). Passage preference: ${passageMode}. Include authentic Seen textbook extracts or Unseen comprehension passages inside the 'passage' field.`
+              : `For 'competency' questions, provide a realistic CBSE case-study scenario in 'passage'.`;
+
+            const prompt = `You are an expert CBSE Board Exam paper setter in India. Generate exactly ${cappedCount} original, exam-standard questions for CBSE Class ${classLevel} ${selectedSubject.name} (Subject Code: ${selectedSubject.code}).
+Allowed question types: [${formatNames}]. Use type codes strictly from: "mcq", "ar", "competency", "short", "long".
+${langInstruction}
+Rules:
+- For "mcq", "ar", and "competency": provide exactly 4 options in 'options', set 'correctIndex' (0-3), and give a clear step-by-step 'explanation'.
+- For "ar" (Assertion-Reason): populate 'assertion' and 'reason', and use standard CBSE A/R 4 options.
+- For "short" (3M) and "long" (5M): leave 'options' empty [], set 'correctIndex' to 0, and provide a complete 'modelAnswer' plus CBSE 'valuePoints' array.`;
+
+            const schema = {
+              type: "OBJECT",
+              properties: {
+                questions: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      type: { type: "STRING", enum: ["mcq", "ar", "competency", "short", "long"] },
+                      marks: { type: "INTEGER" },
+                      section: { type: "STRING" },
+                      topic: { type: "STRING" },
+                      passageType: { type: "STRING" },
+                      passage: { type: "STRING" },
+                      assertion: { type: "STRING" },
+                      reason: { type: "STRING" },
+                      question: { type: "STRING" },
+                      options: { type: "ARRAY", items: { type: "STRING" } },
+                      correctIndex: { type: "INTEGER" },
+                      explanation: { type: "STRING" },
+                      modelAnswer: { type: "STRING" },
+                      valuePoints: { type: "ARRAY", items: { type: "STRING" } }
+                    },
+                    required: ["type", "marks", "section", "topic", "question"]
+                  }
+                }
+              },
+              required: ["questions"]
+            };
+
+            const aiResult = await callGeminiStructured({
+              apiKey: geminiApiKey.trim(),
+              model: geminiModel,
+              prompt,
+              responseSchema: schema
+            });
+
+            if (aiResult?.questions?.length > 0) {
+              questions = aiResult.questions.slice(0, cappedCount).map((q, idx) => ({
+                ...q,
+                id: `${selectedSubject.id}-ai-${Date.now()}-${idx + 1}`,
+                qNumber: idx + 1,
+                options: q.type === "short" || q.type === "long" ? null : (q.options && q.options.length === 4 ? q.options : ["Option A", "Option B", "Option C", "Option D"])
+              }));
+              sourceMode = `Gemini AI (${geminiModel})`;
+            }
+          } catch (err) {
+            console.warn("Gemini AI fallback triggered:", err);
+            setCopyFeedback("Gemini API unreachable or key invalid — loaded CBSE built-in bank.");
+            setTimeout(() => setCopyFeedback(""), 4000);
+          }
+        }
+
+        if (questions.length === 0) {
+          questions = generateOfflineQuestionnaire({
+            classLevel,
+            subject: selectedSubject,
+            count: cappedCount,
+            selectedFormats,
+            passageMode
+          });
+        }
+
         setActivePaper({
           id: `paper-${Date.now()}`,
           classLevel,
           subject: selectedSubject,
           questions,
+          sourceMode,
           createdAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
         });
         setCurrentIdx(0);
@@ -400,7 +788,86 @@
         setMarkedReview({});
         setSecondsElapsed(0);
         setMobileConfigOpen(false);
+        setIsGeneratingPaper(false);
+        setGenerationStatus("");
         setActiveTab("exam");
+      };
+
+      // --- AI Tailored Chapter Notes & SVG Diagram Generator ---
+      const activeNotesKey = `${selectedSubject.id}|${selectedChapter}`;
+      const currentChapterNotes = useMemo(() => {
+        if (chapterNotesCache[activeNotesKey]) return chapterNotesCache[activeNotesKey];
+        if (!selectedChapter) return null;
+        return generateOfflineChapterNotes(classLevel, selectedSubject, selectedChapter);
+      }, [chapterNotesCache, activeNotesKey, classLevel, selectedSubject, selectedChapter]);
+
+      const handleGenerateAiChapterNotes = async (forceRefresh = false) => {
+        if (!selectedChapter) return;
+        if (!geminiApiKey.trim()) {
+          setAiSettingsOpen(true);
+          setNotesError("Enter your free Google Gemini API Key above to generate live AI chapter notes & custom diagrams.");
+          return;
+        }
+        setNotesError("");
+        setIsGeneratingNotes(true);
+        try {
+          const prompt = `You are a senior CBSE NCERT teacher and academic illustrator. Generate comprehensive, exam-focused study notes for:
+Class: ${classLevel}
+Subject: ${selectedSubject.name} (CBSE Code ${selectedSubject.code})
+Chapter: ${selectedChapter}
+
+Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH topic provide:
+1. 'title': Numbered topic heading.
+2. 'definition': Crisp, accurate NCERT definition and conceptual explanation.
+3. 'keyFormula': Key formula, chemical equation, grammar rule, or core principle (or "Conceptual Rule" if humanities/language).
+4. 'example': A concrete solved numerical example, textual extract example, or real-world CBSE application.
+5. 'examTip': High-scoring CBSE board exam tip or common mistake to avoid.
+6. 'diagramCaption': Short descriptive caption for the diagram.
+7. 'svgDiagram': A clean, valid, self-contained inline <svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">...</svg> educational diagram illustrating the topic (ray diagram, circuit, geometric figure, graph, flowchart, or structural model) with clear readable text labels and high-contrast colors on a #f8fafc background.`;
+
+          const schema = {
+            type: "OBJECT",
+            properties: {
+              chapterSummary: { type: "STRING" },
+              topics: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    title: { type: "STRING" },
+                    definition: { type: "STRING" },
+                    keyFormula: { type: "STRING" },
+                    example: { type: "STRING" },
+                    examTip: { type: "STRING" },
+                    diagramCaption: { type: "STRING" },
+                    svgDiagram: { type: "STRING" }
+                  },
+                  required: ["title", "definition", "keyFormula", "example", "examTip", "diagramCaption", "svgDiagram"]
+                }
+              }
+            },
+            required: ["chapterSummary", "topics"]
+          };
+
+          const aiNotes = await callGeminiStructured({
+            apiKey: geminiApiKey.trim(),
+            model: geminiModel,
+            prompt,
+            responseSchema: schema
+          });
+
+          if (aiNotes?.topics?.length > 0) {
+            setChapterNotesCache((prev) => ({
+              ...prev,
+              [activeNotesKey]: { ...aiNotes, isAiGenerated: true }
+            }));
+            setActiveTopicIdx(0);
+          }
+        } catch (err) {
+          setNotesError(`Could not generate AI notes: ${err.message}`);
+        } finally {
+          setIsGeneratingNotes(false);
+        }
       };
 
       const handleSubmitExam = () => {
@@ -454,12 +921,7 @@
             const subTotal = Object.values(updatedSubScores).reduce((sum, val) => sum + Number(val || 0), 0);
             const newTotal = paper.autoScore + subTotal;
             const newChallengeCode = `UTTAR-${paper.classLevel}-${paper.subject.code}-${newTotal}OF${paper.maxMarks}-${paper.studentName.replace(/\s+/g, "").slice(0, 6).toUpperCase()}`;
-            return {
-              ...paper,
-              subjectiveScores: updatedSubScores,
-              totalScore: newTotal,
-              challengeCode: newChallengeCode
-            };
+            return { ...paper, subjectiveScores: updatedSubScores, totalScore: newTotal, challengeCode: newChallengeCode };
           })
         );
       };
@@ -488,16 +950,7 @@
           const scoreNum = Number(sc);
           const maxNum = Number(mx) || 1;
           setFriendComparisons((prev) => [
-            {
-              id: `friend-${Date.now()}`,
-              name: fname,
-              subjectName: subj.name,
-              classLevel: cls,
-              score: scoreNum,
-              maxMarks: maxNum,
-              accuracy: Math.round((scoreNum / maxNum) * 100),
-              timeTaken: 360
-            },
+            { id: `friend-${Date.now()}`, name: fname, subjectName: subj.name, classLevel: cls, score: scoreNum, maxMarks: maxNum, accuracy: Math.round((scoreNum / maxNum) * 100), timeTaken: 360 },
             ...prev
           ]);
           setFriendCodeInput("");
@@ -525,22 +978,22 @@
         <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 pb-20 md:pb-0">
           {/* Top Navigation Bar */}
           <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
               <div
                 onClick={() => activeTab !== "exam" && setActiveTab("practice")}
-                className="flex items-center gap-2.5 cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer shrink-0"
               >
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-xl shadow-sm">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-sm">
                   उ
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-lg tracking-tight text-slate-900">Uttar</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900">Uttar</span>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
                       उत्तर • CBSE
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 hidden sm:block">Class 10 & 12 Exam Practice & Solutions</p>
+                  <p className="text-[11px] text-slate-500 hidden lg:block">AI Practice, Chapter Notes & Diagrams</p>
                 </div>
               </div>
 
@@ -548,14 +1001,15 @@
                 <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                   {[
                     { id: "practice", label: "Practice Paper", icon: "book" },
-                    { id: "solutions", label: "Solutions & Concepts", icon: "lightbulb", badge: savedPapers.length },
-                    { id: "saved", label: "Saved Papers", icon: "folder", badge: savedPapers.length },
-                    { id: "compare", label: "Compare & Share", icon: "users" }
+                    { id: "notes", label: "AI Chapter Notes", icon: "notes" },
+                    { id: "solutions", label: "Solutions", icon: "lightbulb", badge: savedPapers.length },
+                    { id: "saved", label: "Saved", icon: "folder", badge: savedPapers.length },
+                    { id: "compare", label: "Compare", icon: "users" }
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition ${
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs lg:text-sm font-semibold transition ${
                         activeTab === tab.id || (tab.id === "practice" && activeTab === "scorecard")
                           ? "bg-white text-indigo-700 shadow-sm"
                           : "text-slate-600 hover:text-slate-900"
@@ -564,7 +1018,7 @@
                       <Icon name={tab.icon} className="w-4 h-4" />
                       <span>{tab.label}</span>
                       {tab.badge > 0 && (
-                        <span className="text-xs px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-700 font-bold">
+                        <span className="text-[11px] px-1.5 rounded-full bg-indigo-100 text-indigo-700 font-bold">
                           {tab.badge}
                         </span>
                       )}
@@ -596,6 +1050,19 @@
                   </div>
                 ) : (
                   <>
+                    <button
+                      onClick={() => setAiSettingsOpen((prev) => !prev)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition ${
+                        geminiApiKey.trim()
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                      }`}
+                      title="Configure Gemini AI Key"
+                    >
+                      <Icon name="key" className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{geminiApiKey.trim() ? "Gemini AI Active" : "Set AI Key"}</span>
+                    </button>
+
                     <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                       {["10", "12"].map((cls) => (
                         <button
@@ -612,18 +1079,57 @@
                         </button>
                       ))}
                     </div>
-                    <input
-                      type="text"
-                      value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
-                      aria-label="Student Name"
-                      className="hidden sm:block w-32 px-2.5 py-1.5 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
-                      placeholder="Your Name"
-                    />
                   </>
                 )}
               </div>
             </div>
+
+            {/* Collapsible Gemini API Key Bar */}
+            {aiSettingsOpen && activeTab !== "exam" && (
+              <div className="bg-indigo-950 text-white border-t border-indigo-900">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                  <div className="text-xs space-y-0.5">
+                    <div className="font-bold flex items-center gap-1.5 text-indigo-200">
+                      <Icon name="sparkles" className="w-4 h-4 text-amber-400" />
+                      <span>Live Gemini AI Engine (Option B)</span>
+                    </div>
+                    <p className="text-indigo-300">
+                      Stored locally in your browser. Enables unlimited live CBSE question generation and custom AI chapter notes + SVG diagrams.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="password"
+                      value={geminiApiKey}
+                      onChange={(e) => setGeminiApiKey(e.target.value)}
+                      placeholder="Paste Gemini API Key (AIza...)"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white placeholder-indigo-400 focus:outline-none focus:border-amber-400 w-56"
+                    />
+                    <select
+                      value={geminiModel}
+                      onChange={(e) => setGeminiModel(e.target.value)}
+                      className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white focus:outline-none"
+                    >
+                      <option value="gemini-2.5-flash">gemini-2.5-flash (Fast)</option>
+                      <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning)</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={studentName}
+                      onChange={(e) => setStudentName(e.target.value)}
+                      placeholder="Student Name"
+                      className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white w-32"
+                    />
+                    <button
+                      onClick={() => setAiSettingsOpen(false)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-extrabold"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </header>
 
           {copyFeedback && (
@@ -645,7 +1151,7 @@
                         CBSE Class {classLevel} Subjects
                       </h1>
                       <p className="text-xs sm:text-sm text-slate-500">
-                        Select a subject to generate a CBSE-pattern paper capped at official board question limits.
+                        Select a subject to generate live AI or CBSE-blueprint practice papers, or open tailored chapter notes.
                       </p>
                     </div>
                   </div>
@@ -697,8 +1203,18 @@
                             <p className="text-xs text-slate-500 mt-1 line-clamp-2">{subj.pattern}</p>
                           </div>
                           <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
-                            <span className="text-slate-500">{subj.stream}</span>
-                            <span className="text-indigo-600">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSubjectId(subj.id);
+                                setActiveTab("notes");
+                              }}
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              <Icon name="notes" className="w-3.5 h-3.5" /> Chapter Notes
+                            </button>
+                            <span className="text-slate-700">
                               {isSelected ? "Selected ✓" : "Configure →"}
                             </span>
                           </div>
@@ -714,7 +1230,7 @@
                     mobileConfigOpen
                       ? "fixed inset-0 z-40 bg-slate-900/50 flex items-end lg:static lg:bg-transparent"
                       : "hidden lg:block"
-                  } lg:col-span-5 lg:sticky lg:top-22`}
+                  } lg:col-span-5 lg:sticky lg:top-20`}
                 >
                   <div className="bg-white w-full rounded-t-3xl lg:rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xl lg:shadow-sm max-h-[88vh] overflow-y-auto space-y-5">
                     <div className="flex items-start justify-between gap-2">
@@ -851,18 +1367,276 @@
                     </div>
 
                     <button
+                      disabled={isGeneratingPaper}
                       onClick={handleStartExam}
-                      className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
+                      className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
                     >
                       <Icon name="sparkles" className="w-4 h-4" />
-                      <span>Generate & Start Questionnaire ({questionCount} Qs)</span>
+                      <span>
+                        {isGeneratingPaper
+                          ? generationStatus
+                          : geminiApiKey.trim()
+                          ? `Generate Live AI Paper (${questionCount} Qs)`
+                          : `Start CBSE Practice Paper (${questionCount} Qs)`}
+                      </span>
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ==================== 2. ACTIVE CBT EXAM INTERFACE ==================== */}
+            {/* ==================== 2. AI TAILORED CHAPTER NOTES & DIAGRAMS ==================== */}
+            {activeTab === "notes" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column: Subject & Chapter Selector */}
+                <div className="lg:col-span-4 space-y-4">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div>
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
+                        NCERT Syllabus Explorer
+                      </span>
+                      <h1 className="text-lg font-extrabold text-slate-900">
+                        Class {classLevel} Tailored Chapter Notes
+                      </h1>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700">1. Choose Subject</label>
+                      <select
+                        value={selectedSubject.id}
+                        onChange={(e) => setSelectedSubjectId(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-bold bg-slate-50 text-slate-900 focus:outline-none focus:border-indigo-600"
+                      >
+                        {currentSubjects.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} (Code {s.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700">
+                        2. Select Chapter ({subjectChapters.length} Chapters)
+                      </label>
+                      <div className="space-y-1.5 max-h-[52vh] overflow-y-auto pr-1">
+                        {subjectChapters.map((chap) => {
+                          const active = chap === selectedChapter;
+                          const hasAiCache = Boolean(chapterNotesCache[`${selectedSubject.id}|${chap}`]);
+                          return (
+                            <button
+                              key={chap}
+                              onClick={() => {
+                                setSelectedChapter(chap);
+                                setActiveTopicIdx(0);
+                                setNotesError("");
+                              }}
+                              className={`w-full p-3 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between gap-2 ${
+                                active
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                  : "bg-slate-50 text-slate-800 border-slate-200 hover:border-indigo-300"
+                              }`}
+                            >
+                              <span className="line-clamp-2">{chap}</span>
+                              {hasAiCache && (
+                                <span
+                                  className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
+                                    active ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"
+                                  }`}
+                                >
+                                  AI ✓
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Topics, Definitions, Examples & Diagrams */}
+                <div className="lg:col-span-8 space-y-5">
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                            {selectedSubject.name}
+                          </span>
+                          {currentChapterNotes?.isAiGenerated && (
+                            <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              ✨ Live Gemini AI Notes
+                            </span>
+                          )}
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1.5">
+                          {selectedChapter}
+                        </h2>
+                        {currentChapterNotes?.chapterSummary && (
+                          <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                            {currentChapterNotes.chapterSummary}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        disabled={isGeneratingNotes}
+                        onClick={() => handleGenerateAiChapterNotes(true)}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs sm:text-sm font-bold shadow-sm shrink-0"
+                      >
+                        <Icon name="sparkles" className="w-4 h-4" />
+                        <span>
+                          {isGeneratingNotes
+                            ? "Generating AI Notes & Diagrams..."
+                            : "Generate Tailored AI Notes"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {notesError && (
+                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900">
+                        {notesError}
+                      </div>
+                    )}
+
+                    {/* Topic Pills Navigation */}
+                    {currentChapterNotes?.topics?.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100 space-y-2">
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                          <Icon name="layers" className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Relevant Chapter Topics ({currentChapterNotes.topics.length}) — Click a topic to inspect:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {currentChapterNotes.topics.map((t, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setActiveTopicIdx(idx)}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition text-left ${
+                                activeTopicIdx === idx
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300"
+                              }`}
+                            >
+                              {t.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Active Topic Detailed Card: Definition + Formula + Example + SVG Diagram */}
+                  {currentChapterNotes?.topics?.[activeTopicIdx] && (() => {
+                    const topic = currentChapterNotes.topics[activeTopicIdx];
+                    const links = getTopicConceptLinks(selectedSubject, topic.title).slice(0, 3);
+                    return (
+                      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-sm space-y-6">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                            {topic.title}
+                          </h3>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700">
+                            Topic {activeTopicIdx + 1} of {currentChapterNotes.topics.length}
+                          </span>
+                        </div>
+
+                        {/* Definition Block */}
+                        <div className="space-y-1.5">
+                          <div className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
+                            NCERT Definition & Concept Explanation
+                          </div>
+                          <p className="text-sm sm:text-base text-slate-800 leading-relaxed">
+                            {topic.definition}
+                          </p>
+                        </div>
+
+                        {/* Formula / Core Rule Highlight */}
+                        {topic.keyFormula && (
+                          <div className="p-3.5 rounded-xl bg-indigo-50/80 border border-indigo-200">
+                            <div className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-800 mb-1">
+                              Key Formula / Governing Rule
+                            </div>
+                            <div className="font-mono text-xs sm:text-sm font-bold text-indigo-950">
+                              {topic.keyFormula}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Labelled Diagram Block */}
+                        {topic.svgDiagram && (
+                          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                                Visual Concept Diagram
+                              </span>
+                              <span className="text-[11px] font-semibold text-slate-500">CBSE Exam Sketch</span>
+                            </div>
+                            <div
+                              className="diagram-box bg-white p-3 rounded-xl border border-slate-200 overflow-x-auto"
+                              dangerouslySetInnerHTML={{ __html: topic.svgDiagram }}
+                            />
+                            {topic.diagramCaption && (
+                              <p className="text-xs text-center font-semibold text-slate-600">
+                                {topic.diagramCaption}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Worked Example */}
+                        <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1.5">
+                          <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-800">
+                            Relevant Solved Example & Application
+                          </div>
+                          <p className="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+                            {topic.example}
+                          </p>
+                        </div>
+
+                        {/* CBSE Board Exam Tip */}
+                        {topic.examTip && (
+                          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
+                            <Icon name="lightbulb" className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                            <div className="text-xs text-amber-950">
+                              <span className="font-extrabold">CBSE Board Marking Tip: </span>
+                              {topic.examTip}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* External NCERT / DIKSHA Reference Links */}
+                        <div className="pt-2 border-t border-slate-100 space-y-2">
+                          <div className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
+                            <Icon name="globe" className="w-4 h-4 text-indigo-600" />
+                            <span>Explore Further on NCERT, DIKSHA & Khan Academy:</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {links.map((lnk, idx) => (
+                              <a
+                                key={idx}
+                                href={lnk.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 flex items-center justify-between gap-2 transition"
+                              >
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold text-slate-800 truncate">{lnk.source}</div>
+                                  <div className="text-[11px] text-slate-500 truncate">{lnk.tag}</div>
+                                </div>
+                                <Icon name="external" className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* ==================== 3. ACTIVE CBT EXAM INTERFACE ==================== */}
             {activeTab === "exam" && activePaper && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-8 space-y-4">
@@ -872,7 +1646,7 @@
                     return (
                       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-sm space-y-5">
                         <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-extrabold">
                               Q.{q.qNumber} of {activePaper.questions.length}
                             </span>
@@ -882,11 +1656,12 @@
                             <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
                               {q.marks} {q.marks === 1 ? "Mark" : "Marks"}
                             </span>
+                            <span className="text-[11px] font-semibold text-slate-400">
+                              {activePaper.sourceMode}
+                            </span>
                           </div>
                           <button
-                            onClick={() =>
-                              setMarkedReview((prev) => ({ ...prev, [q.id]: !prev[q.id] }))
-                            }
+                            onClick={() => setMarkedReview((prev) => ({ ...prev, [q.id]: !prev[q.id] }))}
                             className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border transition ${
                               markedReview[q.id]
                                 ? "bg-purple-50 text-purple-700 border-purple-300"
@@ -939,9 +1714,7 @@
                             <textarea
                               rows={6}
                               value={userAnswers[q.id] || ""}
-                              onChange={(e) =>
-                                setUserAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                              }
+                              onChange={(e) => setUserAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
                               placeholder="Type your step-by-step CBSE board response here..."
                               className="w-full p-3.5 rounded-xl border border-slate-300 focus:border-indigo-600 focus:outline-none text-sm leading-relaxed"
                             />
@@ -954,9 +1727,7 @@
                               return (
                                 <button
                                   key={idx}
-                                  onClick={() =>
-                                    setUserAnswers((prev) => ({ ...prev, [q.id]: idx }))
-                                  }
+                                  onClick={() => setUserAnswers((prev) => ({ ...prev, [q.id]: idx }))}
                                   className={`w-full p-3.5 rounded-xl border text-left transition flex items-start gap-3 ${
                                     picked
                                       ? "bg-indigo-50 border-indigo-600 ring-2 ring-indigo-600/15"
@@ -965,9 +1736,7 @@
                                 >
                                   <span
                                     className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0 ${
-                                      picked
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-slate-100 text-slate-700"
+                                      picked ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"
                                     }`}
                                   >
                                     {letter}
@@ -1056,8 +1825,7 @@
                           </div>
                           <div className="grid grid-cols-5 gap-2">
                             {secQs.map((item) => {
-                              const answered =
-                                userAnswers[item.id] !== undefined && userAnswers[item.id] !== "";
+                              const answered = userAnswers[item.id] !== undefined && userAnswers[item.id] !== "";
                               const flagged = markedReview[item.id];
                               const active = currentIdx === item.index;
                               return (
@@ -1085,24 +1853,12 @@
                         </div>
                       ))}
                     </div>
-
-                    <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-[11px] font-semibold text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded bg-emerald-600 inline-block" /> Answered
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded bg-purple-200 border border-purple-400 inline-block" /> Review
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded bg-slate-100 border border-slate-300 inline-block" /> Unvisited
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ==================== 3. ON-SPOT SCORECARD VIEW ==================== */}
+            {/* ==================== 4. ON-SPOT SCORECARD VIEW ==================== */}
             {activeTab === "scorecard" && activeResult && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
@@ -1222,7 +1978,7 @@
                           <div className="text-xs sm:text-sm space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                             <div>
                               <span className="font-bold text-emerald-700">Correct Answer: </span>
-                              <span className="font-semibold text-slate-900">{q.options[q.correctIndex]}</span>
+                              <span className="font-semibold text-slate-900">{q.options?.[q.correctIndex]}</span>
                             </div>
                             <div className="text-slate-600">
                               <span className="font-bold text-slate-800">Uttar (Explanation): </span>
@@ -1237,7 +1993,7 @@
               </div>
             )}
 
-            {/* ==================== 4. SOLUTIONS & CONCEPT LINKS TAB ==================== */}
+            {/* ==================== 5. SOLUTIONS & CONCEPT LINKS TAB ==================== */}
             {activeTab === "solutions" && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
@@ -1371,7 +2127,7 @@
                                   <p className="text-sm text-slate-800 whitespace-pre-line leading-relaxed">
                                     {q.modelAnswer}
                                   </p>
-                                  {q.valuePoints && (
+                                  {q.valuePoints && q.valuePoints.length > 0 && (
                                     <div className="pt-2 border-t border-emerald-200/70">
                                       <div className="text-xs font-bold text-emerald-900 mb-1">
                                         CBSE Marking Scheme Value Points:
@@ -1387,7 +2143,7 @@
                               ) : (
                                 <>
                                   <div className="text-sm font-extrabold text-emerald-950">
-                                    Correct Option: {q.options[q.correctIndex]}
+                                    Correct Option: {q.options?.[q.correctIndex]}
                                   </div>
                                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
                                     {q.explanation}
@@ -1429,7 +2185,7 @@
               </div>
             )}
 
-            {/* ==================== 5. SAVED PAPERS ARCHIVE TAB ==================== */}
+            {/* ==================== 6. SAVED PAPERS ARCHIVE TAB ==================== */}
             {activeTab === "saved" && (
               <div className="space-y-4">
                 <div>
@@ -1508,7 +2264,7 @@
               </div>
             )}
 
-            {/* ==================== 6. COMPARE & SHARE WITH FRIENDS TAB ==================== */}
+            {/* ==================== 7. COMPARE & SHARE WITH FRIENDS TAB ==================== */}
             {activeTab === "compare" && (
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
@@ -1603,9 +2359,10 @@
 
           {/* Mobile Bottom Navigation Bar */}
           {activeTab !== "exam" && (
-            <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-4 py-1.5">
+            <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-5 py-1.5">
               {[
                 { id: "practice", label: "Practice", icon: "book" },
+                { id: "notes", label: "AI Notes", icon: "notes" },
                 { id: "solutions", label: "Solutions", icon: "lightbulb" },
                 { id: "saved", label: "Saved", icon: "folder" },
                 { id: "compare", label: "Compare", icon: "users" }
@@ -1615,7 +2372,7 @@
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`flex flex-col items-center justify-center py-1 gap-0.5 text-[11px] font-bold ${
+                    className={`flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-bold ${
                       active ? "text-indigo-600" : "text-slate-500"
                     }`}
                   >
