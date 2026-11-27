@@ -419,9 +419,68 @@
       }
     };
 
-    // --- Gemini API Live Structured Output Helper ---
-    async function callGeminiStructured({ apiKey, model, prompt, responseSchema }) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    // --- Clean JSON Extractor for Multi-Model Responses ---
+    function extractJsonObject(raw) {
+      if (!raw) throw new Error("Empty AI response received.");
+      const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        const firstBrace = cleaned.indexOf("{");
+        const lastBrace = cleaned.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+        }
+        throw new Error("Could not parse structured JSON from AI model output.");
+      }
+    }
+
+    // --- Universal AI Caller (Supports OpenRouter Multi-Model & Direct Google Gemini) ---
+    async function callUniversalAiStructured({ provider, apiKey, model, prompt, responseSchema }) {
+      const cleanKey = apiKey.trim();
+      const effectiveProvider = provider === "auto"
+        ? (cleanKey.startsWith("sk-or-") ? "openrouter" : "gemini")
+        : provider;
+
+      if (effectiveProvider === "openrouter") {
+        const schemaGuide = JSON.stringify(responseSchema, null, 2);
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${cleanKey}`,
+            "HTTP-Referer": window.location.origin || "https://uttar-cbse.app",
+            "X-Title": "Uttar CBSE AI Study & Practice"
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.35,
+            messages: [
+              {
+                role: "system",
+                content: "You are a CBSE curriculum expert. Respond ONLY with a valid JSON object matching the exact schema requested. Do not wrap in markdown or add extra commentary."
+              },
+              {
+                role: "user",
+                content: `${prompt}\n\nReturn valid JSON strictly matching this schema:\n${schemaGuide}`
+              }
+            ]
+          })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`OpenRouter API Error (${res.status}): ${errText}`);
+        }
+
+        const data = await res.json();
+        const rawText = data?.choices?.[0]?.message?.content;
+        return extractJsonObject(rawText);
+      }
+
+      // Direct Google Gemini API mode
+      const effectiveModelId = model.includes("/") ? model.split("/").pop() : model;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModelId)}:generateContent?key=${encodeURIComponent(cleanKey)}`;
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -442,8 +501,7 @@
 
       const data = await res.json();
       const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!rawText) throw new Error("Empty structured response received from Gemini API.");
-      return JSON.parse(rawText);
+      return extractJsonObject(rawText);
     }
 
     // --- Topic-Targeted Internet Study Links Generator ---
@@ -589,9 +647,12 @@
     function UttarApp() {
       const [activeTab, setActiveTab] = useState("practice");
       const [studentName, setStudentName] = useState(() => localStorage.getItem("uttar_student_name") || "Aarav Sharma");
-      const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem("uttar_gemini_key") || "");
-      const [geminiModel, setGeminiModel] = useState(() => localStorage.getItem("uttar_gemini_model") || "gemini-2.5-flash");
+      const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("uttar_ai_provider") || "openrouter");
+      const [apiKey, setApiKey] = useState(() => localStorage.getItem("uttar_universal_api_key") || localStorage.getItem("uttar_gemini_key") || "");
+      const [aiModel, setAiModel] = useState(() => localStorage.getItem("uttar_ai_model") || "openrouter/free");
+      const [customModelId, setCustomModelId] = useState(() => localStorage.getItem("uttar_custom_model") || "");
       const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+      const effectiveModel = aiModel === "__custom__" ? (customModelId.trim() || "openrouter/free") : aiModel;
 
       const [classLevel, setClassLevel] = useState("10");
       const [streamFilter, setStreamFilter] = useState("All");
@@ -659,8 +720,10 @@
       }, [selectedSubject]);
 
       useEffect(() => { localStorage.setItem("uttar_student_name", studentName); }, [studentName]);
-      useEffect(() => { localStorage.setItem("uttar_gemini_key", geminiApiKey); }, [geminiApiKey]);
-      useEffect(() => { localStorage.setItem("uttar_gemini_model", geminiModel); }, [geminiModel]);
+      useEffect(() => { localStorage.setItem("uttar_ai_provider", aiProvider); }, [aiProvider]);
+      useEffect(() => { localStorage.setItem("uttar_universal_api_key", apiKey); }, [apiKey]);
+      useEffect(() => { localStorage.setItem("uttar_ai_model", aiModel); }, [aiModel]);
+      useEffect(() => { localStorage.setItem("uttar_custom_model", customModelId); }, [customModelId]);
       useEffect(() => { localStorage.setItem("uttar_saved_papers", JSON.stringify(savedPapers)); }, [savedPapers]);
       useEffect(() => { localStorage.setItem("uttar_friend_comparisons", JSON.stringify(friendComparisons)); }, [friendComparisons]);
 
@@ -687,15 +750,15 @@
         const cappedCount = Math.min(questionCount, selectedSubject.maxQuestions);
         setIsGeneratingPaper(true);
         setGenerationStatus(
-          geminiApiKey.trim()
-            ? `Generating ${cappedCount} live CBSE Class ${classLevel} ${selectedSubject.name} questions via Gemini AI...`
+          apiKey.trim()
+            ? `Generating ${cappedCount} live CBSE Class ${classLevel} ${selectedSubject.name} questions via ${effectiveModel}...`
             : `Building ${cappedCount} CBSE Class ${classLevel} ${selectedSubject.name} questions...`
         );
 
         let questions = [];
         let sourceMode = "Built-in CBSE Bank";
 
-        if (geminiApiKey.trim()) {
+        if (apiKey.trim()) {
           try {
             const formatNames = selectedFormats
               .map((id) => QUESTION_FORMATS.find((f) => f.id === id)?.label || id)
@@ -742,9 +805,9 @@ Rules:
               required: ["questions"]
             };
 
-            const aiResult = await callGeminiStructured({
-              apiKey: geminiApiKey.trim(),
-              model: geminiModel,
+            const aiResult = await callUniversalAiStructured({ provider: aiProvider,
+              apiKey: apiKey.trim(),
+              model: effectiveModel,
               prompt,
               responseSchema: schema
             });
@@ -756,11 +819,11 @@ Rules:
                 qNumber: idx + 1,
                 options: q.type === "short" || q.type === "long" ? null : (q.options && q.options.length === 4 ? q.options : ["Option A", "Option B", "Option C", "Option D"])
               }));
-              sourceMode = `Gemini AI (${geminiModel})`;
+              sourceMode = `${aiProvider === 'openrouter' ? 'OpenRouter' : 'Gemini'} (${effectiveModel})`;
             }
           } catch (err) {
             console.warn("Gemini AI fallback triggered:", err);
-            setCopyFeedback("Gemini API unreachable or key invalid — loaded CBSE built-in bank.");
+            setCopyFeedback("AI API unreachable or key invalid — loaded CBSE built-in bank.");
             setTimeout(() => setCopyFeedback(""), 4000);
           }
         }
@@ -803,9 +866,9 @@ Rules:
 
       const handleGenerateAiChapterNotes = async (forceRefresh = false) => {
         if (!selectedChapter) return;
-        if (!geminiApiKey.trim()) {
+        if (!apiKey.trim()) {
           setAiSettingsOpen(true);
-          setNotesError("Enter your free Google Gemini API Key above to generate live AI chapter notes & custom diagrams.");
+          setNotesError("Enter your OpenRouter (sk-or-...) or Gemini (AIza...) API key above to generate live AI chapter notes & custom diagrams.");
           return;
         }
         setNotesError("");
@@ -849,9 +912,9 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
             required: ["chapterSummary", "topics"]
           };
 
-          const aiNotes = await callGeminiStructured({
-            apiKey: geminiApiKey.trim(),
-            model: geminiModel,
+          const aiNotes = await callUniversalAiStructured({ provider: aiProvider,
+            apiKey: apiKey.trim(),
+            model: effectiveModel,
             prompt,
             responseSchema: schema
           });
@@ -1053,14 +1116,14 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
                     <button
                       onClick={() => setAiSettingsOpen((prev) => !prev)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition ${
-                        geminiApiKey.trim()
+                        apiKey.trim()
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
                       }`}
                       title="Configure Gemini AI Key"
                     >
                       <Icon name="key" className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{geminiApiKey.trim() ? "Gemini AI Active" : "Set AI Key"}</span>
+                      <span className="hidden sm:inline">{apiKey.trim() ? `AI Active (${aiProvider === "openrouter" ? "OpenRouter" : "Gemini"})` : "Set Universal AI Key"}</span>
                     </button>
 
                     <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
@@ -1084,41 +1147,90 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
               </div>
             </div>
 
-            {/* Collapsible Gemini API Key Bar */}
+            {/* Collapsible Universal OpenRouter / Gemini API Key Bar */}
             {aiSettingsOpen && activeTab !== "exam" && (
               <div className="bg-indigo-950 text-white border-t border-indigo-900">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                  <div className="text-xs space-y-0.5">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                  <div className="text-xs space-y-0.5 max-w-md">
                     <div className="font-bold flex items-center gap-1.5 text-indigo-200">
                       <Icon name="sparkles" className="w-4 h-4 text-amber-400" />
-                      <span>Live Gemini AI Engine (Option B)</span>
+                      <span>Universal Multi-Model AI Engine (OpenRouter + Gemini)</span>
                     </div>
                     <p className="text-indigo-300">
-                      Stored locally in your browser. Enables unlimited live CBSE question generation and custom AI chapter notes + SVG diagrams.
+                      Use one OpenRouter key (<code className="text-amber-300">sk-or-v1-...</code>) to switch between Gemini, GPT-4o, Claude, Llama, and DeepSeek—or use a direct Google Gemini key (<code className="text-amber-300">AIza...</code>). Stored only in your browser.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={aiProvider}
+                      onChange={(e) => {
+                        const nextProv = e.target.value;
+                        setAiProvider(nextProv);
+                        if (nextProv === "gemini" && aiModel.includes("/")) {
+                          setAiModel("gemini-2.5-flash");
+                        } else if (nextProv === "openrouter" && !aiModel.includes("/") && aiModel !== "__custom__") {
+                          setAiModel("openrouter/free");
+                        }
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-indigo-900/90 border border-indigo-700 text-xs font-bold text-amber-300 focus:outline-none"
+                    >
+                      <option value="openrouter">OpenRouter (Universal)</option>
+                      <option value="gemini">Google Gemini Direct</option>
+                    </select>
+
                     <input
                       type="password"
-                      value={geminiApiKey}
-                      onChange={(e) => setGeminiApiKey(e.target.value)}
-                      placeholder="Paste Gemini API Key (AIza...)"
+                      value={apiKey}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setApiKey(val);
+                        if (val.trim().startsWith("sk-or-")) setAiProvider("openrouter");
+                        else if (val.trim().startsWith("AIza")) setAiProvider("gemini");
+                      }}
+                      placeholder={aiProvider === "openrouter" ? "Paste OpenRouter Key (sk-or-v1-...)" : "Paste Gemini Key (AIza...)"}
                       className="px-3 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white placeholder-indigo-400 focus:outline-none focus:border-amber-400 w-56"
                     />
+
                     <select
-                      value={geminiModel}
-                      onChange={(e) => setGeminiModel(e.target.value)}
+                      value={aiModel}
+                      onChange={(e) => setAiModel(e.target.value)}
                       className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white focus:outline-none"
                     >
-                      <option value="gemini-2.5-flash">gemini-2.5-flash (Fast)</option>
-                      <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning)</option>
+                      {aiProvider === "openrouter" ? (
+                        <>
+                          <option value="openrouter/free">openrouter/free (Auto Free Model)</option>
+                          <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
+                          <option value="google/gemini-2.5-pro">google/gemini-2.5-pro</option>
+                          <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+                          <option value="anthropic/claude-3.5-haiku">anthropic/claude-3.5-haiku</option>
+                          <option value="meta-llama/llama-3.3-70b-instruct:free">meta-llama/llama-3.3-70b (Free)</option>
+                          <option value="deepseek/deepseek-chat-v3-0324:free">deepseek/deepseek-chat-v3 (Free)</option>
+                          <option value="__custom__">Custom OpenRouter Model ID...</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="gemini-2.5-flash">gemini-2.5-flash (Fast)</option>
+                          <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning)</option>
+                        </>
+                      )}
                     </select>
+
+                    {aiModel === "__custom__" && aiProvider === "openrouter" && (
+                      <input
+                        type="text"
+                        value={customModelId}
+                        onChange={(e) => setCustomModelId(e.target.value)}
+                        placeholder="e.g. qwen/qwen-2.5-72b-instruct"
+                        className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-amber-400 text-xs text-white w-48"
+                      />
+                    )}
+
                     <input
                       type="text"
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
                       placeholder="Student Name"
-                      className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white w-32"
+                      className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white w-28"
                     />
                     <button
                       onClick={() => setAiSettingsOpen(false)}
@@ -1375,7 +1487,7 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
                       <span>
                         {isGeneratingPaper
                           ? generationStatus
-                          : geminiApiKey.trim()
+                          : apiKey.trim()
                           ? `Generate Live AI Paper (${questionCount} Qs)`
                           : `Start CBSE Practice Paper (${questionCount} Qs)`}
                       </span>
