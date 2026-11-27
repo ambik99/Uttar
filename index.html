@@ -647,12 +647,18 @@
     function UttarApp() {
       const [activeTab, setActiveTab] = useState("practice");
       const [studentName, setStudentName] = useState(() => localStorage.getItem("uttar_student_name") || "Aarav Sharma");
-      const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("uttar_ai_provider") || "openrouter");
+      const [aiProvider, setAiProvider] = useState(() => localStorage.getItem("uttar_ai_provider") || "gemini");
       const [apiKey, setApiKey] = useState(() => localStorage.getItem("uttar_universal_api_key") || localStorage.getItem("uttar_gemini_key") || "");
-      const [aiModel, setAiModel] = useState(() => localStorage.getItem("uttar_ai_model") || "openrouter/free");
+      const [aiModel, setAiModel] = useState(() => {
+        const saved = localStorage.getItem("uttar_ai_model");
+        if (!saved || saved === "gemini-2.5-flash" || saved === "gemini-2.5-pro") return "gemini-3.8-flash";
+        return saved;
+      });
       const [customModelId, setCustomModelId] = useState(() => localStorage.getItem("uttar_custom_model") || "");
       const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
-      const effectiveModel = aiModel === "__custom__" ? (customModelId.trim() || "openrouter/free") : aiModel;
+      const effectiveModel = aiModel === "__custom__"
+        ? (customModelId.trim() || (aiProvider === "gemini" ? "gemini-3.8-flash" : "openrouter/free"))
+        : aiModel;
 
       const [classLevel, setClassLevel] = useState("10");
       const [streamFilter, setStreamFilter] = useState("All");
@@ -1166,8 +1172,8 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
                       onChange={(e) => {
                         const nextProv = e.target.value;
                         setAiProvider(nextProv);
-                        if (nextProv === "gemini" && aiModel.includes("/")) {
-                          setAiModel("gemini-2.5-flash");
+                        if (nextProv === "gemini" && (aiModel.includes("/") || aiModel.startsWith("gemini-2.5"))) {
+                          setAiModel("gemini-3.8-flash");
                         } else if (nextProv === "openrouter" && !aiModel.includes("/") && aiModel !== "__custom__") {
                           setAiModel("openrouter/free");
                         }
@@ -1184,8 +1190,13 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
                       onChange={(e) => {
                         const val = e.target.value;
                         setApiKey(val);
-                        if (val.trim().startsWith("sk-or-")) setAiProvider("openrouter");
-                        else if (val.trim().startsWith("AIza")) setAiProvider("gemini");
+                        if (val.trim().startsWith("sk-or-")) {
+                          setAiProvider("openrouter");
+                          if (!aiModel.includes("/") && aiModel !== "__custom__") setAiModel("openrouter/free");
+                        } else if (val.trim().startsWith("AIza")) {
+                          setAiProvider("gemini");
+                          if (aiModel.includes("/") || aiModel.startsWith("gemini-2.5")) setAiModel("gemini-3.8-flash");
+                        }
                       }}
                       placeholder={aiProvider === "openrouter" ? "Paste OpenRouter Key (sk-or-v1-...)" : "Paste Gemini Key (AIza...)"}
                       className="px-3 py-1.5 rounded-lg bg-indigo-900/80 border border-indigo-700 text-xs text-white placeholder-indigo-400 focus:outline-none focus:border-amber-400 w-56"
@@ -1199,8 +1210,9 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
                       {aiProvider === "openrouter" ? (
                         <>
                           <option value="openrouter/free">openrouter/free (Auto Free Model)</option>
-                          <option value="google/gemini-2.5-flash">google/gemini-2.5-flash</option>
-                          <option value="google/gemini-2.5-pro">google/gemini-2.5-pro</option>
+                          <option value="google/gemini-3.8-flash">google/gemini-3.8-flash</option>
+                          <option value="google/gemini-3.6-flash">google/gemini-3.6-flash</option>
+                          <option value="google/gemini-3.5-flash-lite">google/gemini-3.5-flash-lite</option>
                           <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
                           <option value="anthropic/claude-3.5-haiku">anthropic/claude-3.5-haiku</option>
                           <option value="meta-llama/llama-3.3-70b-instruct:free">meta-llama/llama-3.3-70b (Free)</option>
@@ -1209,18 +1221,21 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
                         </>
                       ) : (
                         <>
-                          <option value="gemini-2.5-flash">gemini-2.5-flash (Fast)</option>
-                          <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning)</option>
+                          <option value="gemini-3.8-flash">gemini-3.8-flash (Latest Flagship Flash)</option>
+                          <option value="gemini-3.6-flash">gemini-3.6-flash (3.5 Flash Replacement)</option>
+                          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Fast &amp; Low Cost)</option>
+                          <option value="gemini-4-hydrogen">gemini-4-hydrogen (Gemini 4 Reasoning)</option>
+                          <option value="__custom__">Custom Gemini Model ID...</option>
                         </>
                       )}
                     </select>
 
-                    {aiModel === "__custom__" && aiProvider === "openrouter" && (
+                    {aiModel === "__custom__" && (
                       <input
                         type="text"
                         value={customModelId}
                         onChange={(e) => setCustomModelId(e.target.value)}
-                        placeholder="e.g. qwen/qwen-2.5-72b-instruct"
+                        placeholder={aiProvider === "gemini" ? "e.g. gemini-3.8-flash" : "e.g. qwen/qwen-2.5-72b-instruct"}
                         className="px-2.5 py-1.5 rounded-lg bg-indigo-900/80 border border-amber-400 text-xs text-white w-48"
                       />
                     )}
