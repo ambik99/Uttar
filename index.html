@@ -35,158 +35,6 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    // --- Standard CBSE Assertion & Reasoning Choices ---
-    const STANDARD_AR_OPTIONS = [
-      "Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.",
-      "Both Assertion (A) and Reason (R) are true but R is NOT the correct explanation of A.",
-      "Assertion (A) is true but Reason (R) is false.",
-      "Assertion (A) is false but Reason (R) is true."
-    ];
-
-    // --- Robust Question Normalizer (Fixes missing A/R options & On-Spot Report Answers/Explanations) ---
-    function normalizeQuestion(rawQ, idx = 0, subject = null) {
-      if (!rawQ || typeof rawQ !== "object") return rawQ;
-
-      const rawType = String(rawQ.type || "mcq").toLowerCase().trim();
-      let type = rawType;
-      if (rawType.includes("assert") || rawType === "a-r" || rawType === "a/r") type = "ar";
-      else if (rawType.includes("comp") || rawType.includes("case")) type = "competency";
-      else if (rawType.includes("short") || rawType === "vsa" || rawType === "sa") type = "short";
-      else if (rawType.includes("long") || rawType === "la") type = "long";
-      else if (!["mcq", "ar", "competency", "short", "long"].includes(rawType)) {
-        type = (rawQ.assertion || rawQ.reason) ? "ar" : "mcq";
-      }
-
-      const isSubjective = type === "short" || type === "long";
-
-      // Extract Assertion & Reason if embedded inside question string
-      let assertion = rawQ.assertion || rawQ.assertionText || rawQ.statementA || "";
-      let reason = rawQ.reason || rawQ.reasonText || rawQ.statementR || "";
-      let questionText = String(rawQ.question || "").trim();
-
-      if (type === "ar" && (!assertion || !reason) && questionText) {
-        const aMatch = questionText.match(/Assertion\s*(?:\(A\))?\s*[:\-]\s*([\s\S]*?)(?=Reason\s*(?:\(R\))?\s*[:\-]|$)/i);
-        const rMatch = questionText.match(/Reason\s*(?:\(R\))?\s*[:\-]\s*([\s\S]*?)$/i);
-        if (aMatch && aMatch[1].trim()) assertion = aMatch[1].trim();
-        if (rMatch && rMatch[1].trim()) reason = rMatch[1].trim();
-        if (assertion && reason) {
-          questionText = "Evaluate Assertion (A) and Reason (R) carefully and choose the correct option:";
-        }
-      }
-
-      // Normalize Options Array
-      let options = null;
-      if (!isSubjective) {
-        let rawOpts = Array.isArray(rawQ.options)
-          ? rawQ.options.map((o) => String(o ?? "").trim()).filter(Boolean)
-          : [];
-
-        if (rawOpts.length === 0 && (rawQ.optionA || rawQ.optionB || rawQ.a || rawQ.b)) {
-          rawOpts = [
-            rawQ.optionA ?? rawQ.a,
-            rawQ.optionB ?? rawQ.b,
-            rawQ.optionC ?? rawQ.c,
-            rawQ.optionD ?? rawQ.d
-          ].map((o) => String(o ?? "").trim()).filter(Boolean);
-        }
-
-        if (type === "ar") {
-          options = rawOpts.length >= 4 ? rawOpts.slice(0, 4) : [...STANDARD_AR_OPTIONS];
-        } else {
-          options = rawOpts.length >= 2
-            ? rawOpts
-            : [
-                "Option A — Direct conceptual relationship as per NCERT",
-                "Option B — Inverse relationship under standard conditions",
-                "Option C — Independent of boundary constraints",
-                "Option D — None of the above"
-              ];
-        }
-      }
-
-      // Resolve correctIndex from numeric, 1-based, letter ("A"/"B"/"C"/"D"), or option text
-      let correctIndex = null;
-      if (!isSubjective && options && options.length > 0) {
-        const rawAns =
-          rawQ.correctIndex !== undefined && rawQ.correctIndex !== null ? rawQ.correctIndex :
-          rawQ.correct_index !== undefined && rawQ.correct_index !== null ? rawQ.correct_index :
-          rawQ.answerIndex !== undefined && rawQ.answerIndex !== null ? rawQ.answerIndex :
-          rawQ.correctOptionIndex !== undefined && rawQ.correctOptionIndex !== null ? rawQ.correctOptionIndex :
-          rawQ.correctOption !== undefined && rawQ.correctOption !== null ? rawQ.correctOption :
-          rawQ.correctAnswer !== undefined && rawQ.correctAnswer !== null ? rawQ.correctAnswer :
-          rawQ.answer !== undefined && rawQ.answer !== null ? rawQ.answer : 0;
-
-        if (typeof rawAns === "number" && !Number.isNaN(rawAns)) {
-          if (rawAns >= 0 && rawAns < options.length) correctIndex = Math.floor(rawAns);
-          else if (rawAns >= 1 && rawAns <= options.length) correctIndex = Math.floor(rawAns) - 1;
-        } else if (typeof rawAns === "string") {
-          const trimmed = rawAns.trim();
-          const cleanLetter = trimmed.replace(/^(?:option|choice|ans|answer)\s*[:\-]?\s*/i, "").replace(/[\(\)\[\]\.]/g, "").trim();
-
-          if (/^[0-9]+$/.test(cleanLetter)) {
-            const num = parseInt(cleanLetter, 10);
-            if (num >= 0 && num < options.length) correctIndex = num;
-            else if (num >= 1 && num <= options.length) correctIndex = num - 1;
-          } else if (/^[A-Da-d]$/.test(cleanLetter)) {
-            const letterIdx = cleanLetter.toUpperCase().charCodeAt(0) - 65;
-            if (letterIdx >= 0 && letterIdx < options.length) correctIndex = letterIdx;
-          } else {
-            const exactIdx = options.findIndex(
-              (opt) => opt.toLowerCase().replace(/^[a-d][\)\.\:\-\s]+/i, "").trim() === trimmed.toLowerCase()
-            );
-            if (exactIdx !== -1) correctIndex = exactIdx;
-          }
-        }
-
-        if (correctIndex === null || correctIndex < 0 || correctIndex >= options.length) {
-          correctIndex = 0;
-        }
-      }
-
-      // Resolve Uttar (Explanation) from all possible field aliases
-      const rawExplanation = [
-        rawQ.explanation,
-        rawQ.uttar,
-        rawQ.uttarExplanation,
-        rawQ.solution,
-        rawQ.reasoning,
-        rawQ.rationale,
-        rawQ.answerExplanation,
-        rawQ.detailedSolution
-      ].find((val) => typeof val === "string" && val.trim().length > 0);
-
-      const explanation = isSubjective
-        ? (rawExplanation || rawQ.modelAnswer || "")
-        : (rawExplanation
-            ? rawExplanation.trim()
-            : `As per CBSE NCERT curriculum standards, Option (${String.fromCharCode(65 + correctIndex)}) "${options[correctIndex]}" is the verified correct answer for ${rawQ.topic || (subject ? subject.name : "this concept")}.`);
-
-      const modelAnswer = isSubjective
-        ? (String(rawQ.modelAnswer || rawExplanation || "").trim() ||
-            "1. State the exact NCERT definition and core principle.
-2. Provide step-by-step derivation, diagram, or analytical points.
-3. Conclude with a verified board exam example.")
-        : (rawQ.modelAnswer || null);
-
-      return {
-        ...rawQ,
-        id: rawQ.id || `${subject?.id || "cbse"}-q-${idx + 1}`,
-        qNumber: rawQ.qNumber || idx + 1,
-        type,
-        marks: Number(rawQ.marks) || (type === "long" ? 5 : type === "competency" ? 4 : type === "short" ? 3 : 1),
-        section: rawQ.section || (type === "long" ? "Section D" : type === "competency" ? "Section E" : type === "short" ? "Section C" : "Section A"),
-        topic: rawQ.topic || (subject ? `${subject.name} Core Concept` : "CBSE Core Concept"),
-        assertion: type === "ar" ? assertion : (rawQ.assertion || null),
-        reason: type === "ar" ? reason : (rawQ.reason || null),
-        question: questionText || (type === "ar" ? "Evaluate Assertion (A) and Reason (R) carefully:" : "Select the most appropriate option as per NCERT guidelines:"),
-        options,
-        correctIndex,
-        explanation,
-        modelAnswer,
-        valuePoints: Array.isArray(rawQ.valuePoints) ? rawQ.valuePoints : null
-      };
-    }
-
     // --- Crisp Inline SVG Icons ---
     const Icon = ({ name, className = "w-5 h-5" }) => {
       const paths = {
@@ -210,9 +58,7 @@
         trash: <><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>,
         globe: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
         key: <><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" /></>,
-        layers: <><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></>,
-        logOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>,
-        bookOpen: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /><line x1="6" y1="8" x2="8" y2="8" /><line x1="6" y1="12" x2="8" y2="12" /><line x1="16" y1="8" x2="18" y2="8" /><line x1="16" y1="12" x2="18" y2="12" /></>
+        layers: <><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></>
       };
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -258,263 +104,154 @@
       ]
     };
 
-    // --- Complete 2026 NCERT Rationalized Syllabus Directory for ALL 29 CBSE Subjects ---
+    // --- NCERT Chapter Syllabus Directory for Tailored Notes ---
     const CBSE_CHAPTERS = {
       "10-math-std": [
-        "Ch 1: Real Numbers", "Ch 2: Polynomials", "Ch 3: Pair of Linear Equations in Two Variables",
-        "Ch 4: Quadratic Equations", "Ch 5: Arithmetic Progressions", "Ch 6: Triangles",
-        "Ch 7: Coordinate Geometry", "Ch 8: Introduction to Trigonometry", "Ch 9: Some Applications of Trigonometry",
-        "Ch 10: Circles", "Ch 11: Areas Related to Circles", "Ch 12: Surface Areas and Volumes",
-        "Ch 13: Statistics", "Ch 14: Probability"
+        "Ch 1: Real Numbers",
+        "Ch 2: Polynomials",
+        "Ch 3: Pair of Linear Equations in Two Variables",
+        "Ch 4: Quadratic Equations",
+        "Ch 5: Arithmetic Progressions",
+        "Ch 6: Triangles",
+        "Ch 7: Coordinate Geometry",
+        "Ch 8: Introduction to Trigonometry",
+        "Ch 9: Some Applications of Trigonometry",
+        "Ch 10: Circles",
+        "Ch 11: Areas Related to Circles",
+        "Ch 12: Surface Areas and Volumes",
+        "Ch 13: Statistics",
+        "Ch 14: Probability"
       ],
       "10-math-basic": [
-        "Ch 1: Real Numbers", "Ch 2: Polynomials", "Ch 3: Pair of Linear Equations in Two Variables",
-        "Ch 4: Quadratic Equations", "Ch 5: Arithmetic Progressions", "Ch 6: Triangles",
-        "Ch 7: Coordinate Geometry", "Ch 8: Introduction to Trigonometry", "Ch 9: Some Applications of Trigonometry",
-        "Ch 10: Circles", "Ch 11: Areas Related to Circles", "Ch 12: Surface Areas and Volumes",
-        "Ch 13: Statistics", "Ch 14: Probability"
+        "Ch 1: Real Numbers",
+        "Ch 2: Polynomials",
+        "Ch 3: Pair of Linear Equations in Two Variables",
+        "Ch 4: Quadratic Equations",
+        "Ch 5: Arithmetic Progressions",
+        "Ch 6: Triangles",
+        "Ch 7: Coordinate Geometry",
+        "Ch 8: Introduction to Trigonometry",
+        "Ch 10: Circles",
+        "Ch 13: Statistics",
+        "Ch 14: Probability"
       ],
       "10-science": [
-        "Ch 1: Chemical Reactions and Equations", "Ch 2: Acids, Bases and Salts", "Ch 3: Metals and Non-metals",
-        "Ch 4: Carbon and its Compounds", "Ch 5: Life Processes", "Ch 6: Control and Coordination",
-        "Ch 7: How do Organisms Reproduce?", "Ch 8: Heredity", "Ch 9: Light – Reflection and Refraction",
-        "Ch 10: The Human Eye and the Colourful World", "Ch 11: Electricity",
-        "Ch 12: Magnetic Effects of Electric Current", "Ch 13: Our Environment"
+        "Ch 1: Chemical Reactions and Equations",
+        "Ch 2: Acids, Bases and Salts",
+        "Ch 3: Metals and Non-metals",
+        "Ch 4: Carbon and its Compounds",
+        "Ch 5: Life Processes",
+        "Ch 6: Control and Coordination",
+        "Ch 7: How do Organisms Reproduce?",
+        "Ch 8: Heredity",
+        "Ch 9: Light – Reflection and Refraction",
+        "Ch 10: The Human Eye and the Colourful World",
+        "Ch 11: Electricity",
+        "Ch 12: Magnetic Effects of Electric Current",
+        "Ch 13: Our Environment"
       ],
       "10-sst": [
-        "History Ch 1: The Rise of Nationalism in Europe", "History Ch 2: Nationalism in India",
-        "History Ch 3: The Making of a Global World", "History Ch 4: The Age of Industrialisation",
-        "History Ch 5: Print Culture and the Modern World", "Geography Ch 1: Resources and Development",
-        "Geography Ch 2: Forest and Wildlife Resources", "Geography Ch 3: Water Resources",
-        "Geography Ch 4: Agriculture", "Geography Ch 5: Minerals and Energy Resources",
-        "Geography Ch 6: Manufacturing Industries", "Geography Ch 7: Lifelines of National Economy",
-        "Pol. Science Ch 1: Power Sharing", "Pol. Science Ch 2: Federalism",
-        "Pol. Science Ch 3: Gender, Religion and Caste", "Pol. Science Ch 4: Political Parties",
-        "Pol. Science Ch 5: Outcomes of Democracy", "Economics Ch 1: Development",
-        "Economics Ch 2: Sectors of the Indian Economy", "Economics Ch 3: Money and Credit",
-        "Economics Ch 4: Globalisation and the Indian Economy"
+        "History Ch 1: The Rise of Nationalism in Europe",
+        "History Ch 2: Nationalism in India",
+        "Geography Ch 1: Resources and Development",
+        "Geography Ch 4: Agriculture",
+        "Pol. Science Ch 1: Power Sharing",
+        "Pol. Science Ch 2: Federalism",
+        "Economics Ch 1: Development",
+        "Economics Ch 2: Sectors of the Indian Economy"
       ],
       "10-eng": [
-        "First Flight: A Letter to God & Dust of Snow / Fire and Ice",
+        "First Flight: A Letter to God",
         "First Flight: Nelson Mandela — Long Walk to Freedom",
         "First Flight: Two Stories about Flying",
         "First Flight: From the Diary of Anne Frank",
         "First Flight: Glimpses of India",
-        "First Flight: Mijbil the Otter & Madam Rides the Bus",
-        "First Flight: The Sermon at Benares & The Proposal",
-        "Footprints Without Feet: A Triumph of Surgery & The Thief's Story",
-        "Footprints Without Feet: Footprints Without Feet & The Making of a Scientist",
-        "Footprints Without Feet: The Necklace, Bholi & The Book That Saved the Earth",
-        "Grammar & Writing: Tenses, Modals, Reported Speech & Analytical Paragraph"
+        "First Flight: The Sermon at Benares",
+        "Footprints Without Feet: A Triumph of Surgery",
+        "Footprints Without Feet: The Thief's Story",
+        "Grammar: Tenses, Modals & Reported Speech"
       ],
       "10-hindi-a": [
-        "क्षितिज (काव्य): सूरदास के पद", "क्षितिज (काव्य): राम-लक्ष्मण-परशुराम संवाद",
-        "क्षितिज (काव्य): आत्मकथ्य, उत्साह और अट नहीं रही है", "क्षितिज (काव्य): यह दंतुरित मुस्कान और फसल, संगतकार",
-        "क्षितिज (गद्य): नेताजी का चश्मा", "क्षितिज (गद्य): बालगोबिन भगत", "क्षितिज (गद्य): लखनवी अंदाज़",
-        "क्षितिज (गद्य): एक कहानी यह भी, नौबतखाने में इबादत, संस्कृति",
-        "कृतिका: माता का अँचल, साना-साना हाथ जोड़ि, मैं क्यों लिखता हूँ",
-        "व्याकरण: रचना के आधार पर वाक्य भेद, वाच्य, पद परिचय, अलंकार"
+        "क्षितिज: सूरदास के पद",
+        "क्षितिज: राम-लक्ष्मण-परशुराम संवाद",
+        "क्षितिज: नेताजी का चश्मा",
+        "क्षितिज: बालगोबिन भगत",
+        "क्षितिज: लखनवी अंदाज़",
+        "कृतिका: माता का अँचल",
+        "व्याकरण: रचना के आधार पर वाक्य भेद व वाच्य"
       ],
       "10-hindi-b": [
-        "स्पर्श (काव्य): कबीर की साखी व मीरा के पद", "स्पर्श (काव्य): मनुष्यता, पर्वत प्रदेश में पावस, तोप",
-        "स्पर्श (काव्य): कर चले हम फ़िदा व आत्मत्राण", "स्पर्श (गद्य): बड़े भाई साहब व डायरी का एक पन्ना",
-        "स्पर्श (गद्य): तताँरा-वामीरो कथा व तीसरी कसम के शिल्पकार",
-        "स्पर्श (गद्य): अब कहाँ दूसरे के दुख से दुखी होने वाले, पतझर में टूटी पत्तियाँ, कारतूस",
-        "संचयन: हरिहर काका, सपनों के-से दिन, टोपी शुक्ला",
-        "व्याकरण: पदबंध, रचना के आधार पर वाक्य रूपांतरण, समास, मुहावरे"
+        "स्पर्श: कबीर की साखी",
+        "स्पर्श: मीरा के पद",
+        "स्पर्श: बड़े भाई साहब",
+        "स्पर्श: तताँरा-वामीरो कथा",
+        "संचयन: हरिहर काका",
+        "व्याकरण: पदबंध व समास"
       ],
       "10-bengali": [
-        "গল্প: জ্ঞানচক্ষু (আশাপূর্ণা দেবী)", "গল্প: বহুরূপী (সুবোধ ঘোষ)",
-        "গল্প: পথের দাবী (শরৎচন্দ্র চট্টোপাধ্যায়)", "গল্প: অদল বদল (পান্নালাল প্যাটেল) ও নদীর বিদ্রোহ (মানিক বন্দ্যোপাধ্যায়)",
-        "কবিতা: অসুখী একজন (পাবলো নেরুদা)", "কবিতা: আয় আরো বেঁধে বেঁধে থাকি (শঙ্খ ঘোষ)",
-        "কবিতা: আফ্রিকা (রবীন্দ্রনাথ ঠাকুর) ও অভিষেক (মাইকেল মধুসূদন দত্ত)",
-        "কবিতা: প্রলয়োল্লাস (কাজী নজরুল ইসলাম) ও অস্ত্রের বিরুদ্ধে গান (জয় গোস্বামী)",
-        "নাটক ও সহায়ক পাঠ: সিরাজদ্দৌলা ও কোনি (মতি নন্দী)",
-        "ব্যাকরণ ও নির্মিতি: কারক ও অকারক সম্পর্ক, সমাস, বাক্য পরিবর্তন, প্রতিবেদন"
-      ],
-      "10-it": [
-        "Part A Unit 1: Communication Skills – II", "Part A Unit 2: Self-Management Skills – II",
-        "Part A Unit 3: Information and Communication Technology (ICT) Skills – II",
-        "Part A Unit 4: Entrepreneurial Skills – II & Green Skills – II",
-        "Part B Unit 1: Digital Documentation (Advanced) using LibreOffice Writer",
-        "Part B Unit 2: Electronic Spreadsheet (Advanced) using LibreOffice Calc",
-        "Part B Unit 3: Database Management System using LibreOffice Base",
-        "Part B Unit 4: Maintain Healthy, Safe and Secure Working Environment"
-      ],
-      "10-ai": [
-        "Part A: Employability Skills (Communication, Self-Mgmt, ICT, Green Skills)",
-        "Part B Unit 1: Revisiting AI Project Cycle & Ethical Frameworks for AI",
-        "Part B Unit 2: Advanced Concepts of Modeling in AI",
-        "Part B Unit 3: Evaluating Models (Confusion Matrix, Precision, Recall, F1)",
-        "Part B Unit 4: Statistical Data & Data Literacy",
-        "Part B Unit 5: Computer Vision (CV) & Image Processing",
-        "Part B Unit 6: Natural Language Processing (NLP) & Text Normalization",
-        "Part B Unit 7: Advance Python & Practical Data Science"
-      ],
-      "10-sanskrit": [
-        "शेमुषी पाठ १: शुचिपर्यावरणम्", "शेमुषी पाठ २: बुद्धिर्बलवती सदा", "शेमुषी पाठ ३: शिशुलालनम्",
-        "शेमुषी पाठ ४: जननी तुल्यवत्सला", "शेमुषी पाठ ५: सुभाषितानि", "शेमुषी पाठ ६: सौहार्दं प्रकृतेः शोभा",
-        "शेमुषी पाठ ७: विचित्रः साक्षी", "शेमुषी पाठ ८: सूक्तयः व अन्योक्तयः",
-        "व्याकरणम्: सन्धिः, समासः, प्रत्ययाः, वाच्यपरिवर्तनम्, समयलेखनम्, अव्ययपदानि"
+        "গল্প: জ্ঞানচক্ষু (আশাপূর্ণা দেবী)",
+        "গল্প: বহুরূপী (সুবোধ ঘোষ)",
+        "গল্প: পথের দাবী (শরৎচন্দ্র চট্টোপাধ্যায়)",
+        "কবিতা: অসুখী একজন (পাবলো নেরুদা)",
+        "কবিতা: আয় আরো বেঁধে বেঁধে থাকি (শঙ্খ ঘোষ)",
+        "কবিতা: আফ্রিকা (রবীন্দ্রনাথ ঠাকুর)",
+        "নাটক: সিরাজদ্দৌলা (শচীন্দ্রনাথ সেনগুপ্ত)",
+        "ব্যাকরণ: কারক ও অকারক সম্পর্ক, সমাস"
       ],
       "12-phy": [
-        "Ch 1: Electric Charges and Fields", "Ch 2: Electrostatic Potential and Capacitance",
-        "Ch 3: Current Electricity", "Ch 4: Moving Charges and Magnetism", "Ch 5: Magnetism and Matter",
-        "Ch 6: Electromagnetic Induction", "Ch 7: Alternating Current", "Ch 8: Electromagnetic Waves",
-        "Ch 9: Ray Optics and Optical Instruments", "Ch 10: Wave Optics",
-        "Ch 11: Dual Nature of Radiation and Matter", "Ch 12: Atoms", "Ch 13: Nuclei",
-        "Ch 14: Semiconductor Electronics: Materials, Devices and Simple Circuits"
+        "Ch 1: Electric Charges and Fields",
+        "Ch 2: Electrostatic Potential and Capacitance",
+        "Ch 3: Current Electricity",
+        "Ch 4: Moving Charges and Magnetism",
+        "Ch 5: Magnetism and Matter",
+        "Ch 6: Electromagnetic Induction",
+        "Ch 7: Alternating Current",
+        "Ch 8: Electromagnetic Waves",
+        "Ch 9: Ray Optics and Optical Instruments",
+        "Ch 10: Wave Optics",
+        "Ch 11: Dual Nature of Radiation and Matter",
+        "Ch 12: Atoms",
+        "Ch 13: Nuclei",
+        "Ch 14: Semiconductor Electronics"
       ],
       "12-chem": [
-        "Ch 1: Solutions", "Ch 2: Electrochemistry", "Ch 3: Chemical Kinetics",
-        "Ch 4: The d- and f-Block Elements", "Ch 5: Coordination Compounds",
-        "Ch 6: Haloalkanes and Haloarenes", "Ch 7: Alcohols, Phenols and Ethers",
-        "Ch 8: Aldehydes, Ketones and Carboxylic Acids", "Ch 9: Amines", "Ch 10: Biomolecules"
+        "Ch 1: Solutions",
+        "Ch 2: Electrochemistry",
+        "Ch 3: Chemical Kinetics",
+        "Ch 4: The d- and f-Block Elements",
+        "Ch 5: Coordination Compounds",
+        "Ch 6: Haloalkanes and Haloarenes",
+        "Ch 7: Alcohols, Phenols and Ethers",
+        "Ch 8: Aldehydes, Ketones and Carboxylic Acids",
+        "Ch 9: Amines",
+        "Ch 10: Biomolecules"
       ],
       "12-math": [
-        "Ch 1: Relations and Functions", "Ch 2: Inverse Trigonometric Functions", "Ch 3: Matrices",
-        "Ch 4: Determinants", "Ch 5: Continuity and Differentiability", "Ch 6: Application of Derivatives",
-        "Ch 7: Integrals", "Ch 8: Application of Integrals", "Ch 9: Differential Equations",
-        "Ch 10: Vector Algebra", "Ch 11: Three Dimensional Geometry", "Ch 12: Linear Programming", "Ch 13: Probability"
+        "Ch 1: Relations and Functions",
+        "Ch 2: Inverse Trigonometric Functions",
+        "Ch 3: Matrices",
+        "Ch 4: Determinants",
+        "Ch 5: Continuity and Differentiability",
+        "Ch 6: Application of Derivatives",
+        "Ch 7: Integrals",
+        "Ch 8: Application of Integrals",
+        "Ch 9: Differential Equations",
+        "Ch 10: Vector Algebra",
+        "Ch 11: Three Dimensional Geometry",
+        "Ch 12: Linear Programming",
+        "Ch 13: Probability"
       ],
       "12-bio": [
-        "Ch 1: Sexual Reproduction in Flowering Plants", "Ch 2: Human Reproduction", "Ch 3: Reproductive Health",
-        "Ch 4: Principles of Inheritance and Variation", "Ch 5: Molecular Basis of Inheritance",
-        "Ch 6: Evolution", "Ch 7: Human Health and Disease", "Ch 8: Microbes in Human Welfare",
-        "Ch 9: Biotechnology: Principles and Processes", "Ch 10: Biotechnology and its Applications",
-        "Ch 11: Organisms and Populations", "Ch 12: Ecosystem", "Ch 13: Biodiversity and Conservation"
-      ],
-      "12-cs": [
-        "Unit 1 Ch 1: Python Revision Tour (Functions & Modules)", "Unit 1 Ch 2: Exception Handling in Python",
-        "Unit 1 Ch 3: File Handling (Text, Binary & CSV Files)",
-        "Unit 1 Ch 4: Data Structures — Stack Implementation in Python",
-        "Unit 2 Ch 5: Computer Networks (Topologies, Protocols & Web Services)",
-        "Unit 3 Ch 6: Relational Database & SQL Queries (Joins, Group By, Having)",
-        "Unit 3 Ch 7: Interface of Python with an SQL Database (mysql.connector)"
-      ],
-      "12-ip": [
-        "Unit 1 Ch 1: Data Handling using Pandas — Series & DataFrame",
-        "Unit 1 Ch 2: Data Visualization using Matplotlib (Line, Bar, Histogram)",
-        "Unit 2 Ch 3: Database Query using SQL (Math, Text, Date & Aggregate Functions)",
-        "Unit 3 Ch 4: Introduction to Computer Networks (LAN/WAN, Devices, Topologies)",
-        "Unit 4 Ch 5: Societal Impacts (Digital Footprint, IPR, Cyber Crime, E-Waste)"
-      ],
-      "12-acc": [
-        "Part A Ch 1: Accounting for Partnership Firms — Fundamentals",
-        "Part A Ch 2: Goodwill — Nature and Valuation",
-        "Part A Ch 3: Change in Profit-Sharing Ratio Among Existing Partners",
-        "Part A Ch 4: Admission of a Partner", "Part A Ch 5: Retirement and Death of a Partner",
-        "Part A Ch 6: Dissolution of a Partnership Firm", "Part A Ch 7: Accounting for Share Capital",
-        "Part A Ch 8: Issue of Debentures",
-        "Part B Ch 1: Financial Statements of a Company & Comparative/Common-Size Statements",
-        "Part B Ch 2: Accounting Ratios (Liquidity, Solvency, Activity, Profitability)",
-        "Part B Ch 3: Cash Flow Statement (AS-3 Revised)"
-      ],
-      "12-bst": [
-        "Part A Ch 1: Nature and Significance of Management",
-        "Part A Ch 2: Principles of Management (Fayol & Taylor)", "Part A Ch 3: Business Environment",
-        "Part A Ch 4: Planning", "Part A Ch 5: Organising", "Part A Ch 6: Staffing",
-        "Part A Ch 7: Directing", "Part A Ch 8: Controlling", "Part B Ch 9: Financial Management",
-        "Part B Ch 10: Financial Markets (Money & Capital Market, SEBI)",
-        "Part B Ch 11: Marketing Management", "Part B Ch 12: Consumer Protection"
-      ],
-      "12-econ": [
-        "Macroeconomics Unit 1: National Income and Related Aggregates",
-        "Macroeconomics Unit 2: Money and Banking (Credit Creation & RBI)",
-        "Macroeconomics Unit 3: Determination of Income and Employment (AD-AS & Multiplier)",
-        "Macroeconomics Unit 4: Government Budget and the Economy",
-        "Macroeconomics Unit 5: Balance of Payments & Foreign Exchange Rate",
-        "Indian Econ Unit 6: Development Experience (1947–90) & Economic Reforms since 1991",
-        "Indian Econ Unit 7: Current Challenges (Human Capital, Rural Dev, Employment, Sustainable Dev)",
-        "Indian Econ Unit 8: Comparative Development Experiences of India, China & Pakistan"
-      ],
-      "12-hist": [
-        "Theme 1: Bricks, Beads and Bones (The Harappan Civilisation)",
-        "Theme 2: Kings, Farmers and Towns (Early States and Economies)",
-        "Theme 3: Kinship, Caste and Class (Early Societies)",
-        "Theme 4: Thinkers, Beliefs and Buildings (Cultural Developments)",
-        "Theme 5: Through the Eyes of Travellers", "Theme 6: Bhakti-Sufi Traditions",
-        "Theme 7: An Imperial Capital — Vijayanagara", "Theme 8: Peasants, Zamindars and the State",
-        "Theme 9: Colonialism and the Countryside", "Theme 10: Rebels and the Raj (1857 Revolt)",
-        "Theme 11: Mahatma Gandhi and the Nationalist Movement", "Theme 12: Framing the Constitution"
-      ],
-      "12-pol": [
-        "Book 1 Ch 1: The End of Bipolarity", "Book 1 Ch 2: Contemporary Centres of Power",
-        "Book 1 Ch 3: Contemporary South Asia", "Book 1 Ch 4: International Organizations",
-        "Book 1 Ch 5: Security in the Contemporary World", "Book 1 Ch 6: Environment and Natural Resources",
-        "Book 1 Ch 7: Globalisation", "Book 2 Ch 1: Challenges of Nation Building",
-        "Book 2 Ch 2: Era of One-Party Dominance & Politics of Planned Development",
-        "Book 2 Ch 3: India's External Relations",
-        "Book 2 Ch 4: Challenges to and Restoration of the Congress System & Crisis of Democratic Order",
-        "Book 2 Ch 5: Regional Aspirations & Recent Developments in Indian Politics"
-      ],
-      "12-geo": [
-        "Book 1 Ch 1: Human Geography — Nature and Scope",
-        "Book 1 Ch 2: The World Population — Distribution, Density and Growth",
-        "Book 1 Ch 3: Human Development", "Book 1 Ch 4: Primary Activities",
-        "Book 1 Ch 5: Secondary Activities", "Book 1 Ch 6: Tertiary and Quaternary Activities",
-        "Book 1 Ch 7: Transport and Communication & International Trade",
-        "Book 2 Ch 1: Population — Distribution, Density, Growth and Composition (India)",
-        "Book 2 Ch 2: Human Settlements & Land Resources and Agriculture",
-        "Book 2 Ch 3: Water Resources & Mineral and Energy Resources",
-        "Book 2 Ch 4: Planning and Sustainable Development in Indian Context",
-        "Book 2 Ch 5: Transport and Communication, International Trade & Geographical Perspective"
-      ],
-      "12-psych": [
-        "Ch 1: Variations in Psychological Attributes", "Ch 2: Self and Personality",
-        "Ch 3: Meeting Life Challenges", "Ch 4: Psychological Disorders",
-        "Ch 5: Therapeutic Approaches", "Ch 6: Attitude and Social Cognition",
-        "Ch 7: Social Influence and Group Processes"
-      ],
-      "12-soc": [
-        "Book 1 Ch 2: The Demographic Structure of the Indian Society",
-        "Book 1 Ch 3: Social Institutions — Continuity and Change",
-        "Book 1 Ch 5: Patterns of Social Inequality and Exclusion",
-        "Book 1 Ch 6: The Challenges of Cultural Diversity", "Book 2 Ch 1: Structural Change",
-        "Book 2 Ch 2: Cultural Change", "Book 2 Ch 4: Change and Development in Rural Society",
-        "Book 2 Ch 5: Change and Development in Industrial Society", "Book 2 Ch 8: Social Movements"
-      ],
-      "12-eng": [
-        "Flamingo (Prose): The Last Lesson & Lost Spring",
-        "Flamingo (Prose): Deep Water & The Rattrap",
-        "Flamingo (Prose): Indigo & Poets and Pancakes",
-        "Flamingo (Prose): The Interview & Going Places",
-        "Flamingo (Poetry): My Mother at Sixty-Six & Keeping Quiet",
-        "Flamingo (Poetry): A Thing of Beauty, A Roadside Stand & Aunt Jennifer's Tigers",
-        "Vistas: The Third Level, The Tiger King & Journey to the End of the Earth",
-        "Vistas: The Enemy, On the Face of It & Memories of Childhood",
-        "Creative Writing: Notice, Invitations, Letter to Editor, Article & Report Writing"
-      ],
-      "12-hindi": [
-        "आरोह (काव्य): आत्मपरिचय, एक गीत, पतंग, कविता के बहाने",
-        "आरोह (काव्य): कैमरे में बंद अपाहिज, उषा, बादल राग",
-        "आरोह (काव्य): कवितावली, लक्ष्मण-मूच्छ और राम का विलाप, रुबाइयाँ, छोटा मेरा खेत",
-        "आरोह (गद्य): भक्तिन, बाज़ार दर्शन, काले मेघा पानी दे",
-        "आरोह (गद्य): पहलवान की ढोलक, शिरीष के फूल, श्रम विभाजन और जाति-प्रथा",
-        "वितान: सिल्वर वैडिंग, जूझ, अतीत में दबे पाँव",
-        "अभिव्यक्ति और माध्यम: विभिन्न माध्यमों के लिए लेखन, पत्रकारीय लेखन, विशेष लेखन"
-      ],
-      "12-bengali": [
-        "গল্প: কে বাঁচায়, কে বাঁচে (মানিক বন্দ্যোপাধ্যায়)",
-        "গল্প: ভাত (মহাশ্বেতা দেবী) ও ভারতবর্ষ (সৈয়দ মুস্তাফা সিরাজ)",
-        "কবিতা: রূপনারানের কূলে (রবীন্দ্রনাথ ঠাকুর) ও শিকার (জীবনানন্দ দাশ)",
-        "কবিতা: মহুয়ার দেশ (সমর সেন), আমি দেখি (শক্তি চট্টোপাধ্যায়) ও ক্রন্দনরতা জননীর পাশে",
-        "নাটক: বিভাব (শম্ভু মিত্র) ও নানা রঙের দিন (অজিতেশ বন্দ্যোপাধ্যায়)",
-        "আন্তর্জাতিক কবিতা ও ভারতীয় গল্প: পড়তে জানে এমন এক মজুরের প্রশ্ন ও অলৌকিক",
-        "পূর্ণাঙ্গ সহায়ক গ্রন্থ: আমার বাংলা (সুভাষ মুখোপাধ্যায়)",
-        "ভাষা ও শিল্প-সাহিত্য: ধ্বনিতত্ত্ব, রূপতত্ত্ব, বাক্যতত্ত্ব ও বাঙালির শিল্প-সংস্কৃতির ইতিহাস"
-      ],
-      "12-pe": [
-        "Unit 1: Management of Sporting Events (Fixtures, Knock-out & League)",
-        "Unit 2: Children and Women in Sports (Postural Deformities & Female Athlete Triad)",
-        "Unit 3: Yoga as Preventive Measure for Lifestyle Disease",
-        "Unit 4: Physical Education and Sports for CWSN (Divyangjan)",
-        "Unit 5: Sports and Nutrition (Macro/Micro Nutrients & Balanced Diet)",
-        "Unit 6: Test and Measurement in Sports (SAI Khelo India & Rikli-Jones Test)",
-        "Unit 7: Physiology and Injuries in Sports",
-        "Unit 8: Biomechanics and Sports (Newton's Laws, Equilibrium & Friction)",
-        "Unit 9: Psychology and Sports (Personality, Motivation & Aggression)",
-        "Unit 10: Training in Sports (Strength, Endurance, Speed & Flexibility Methods)"
+        "Ch 1: Sexual Reproduction in Flowering Plants",
+        "Ch 2: Human Reproduction",
+        "Ch 3: Reproductive Health",
+        "Ch 4: Principles of Inheritance and Variation",
+        "Ch 5: Molecular Basis of Inheritance",
+        "Ch 6: Evolution",
+        "Ch 7: Human Health and Disease",
+        "Ch 9: Biotechnology: Principles and Processes",
+        "Ch 11: Organisms and Populations",
+        "Ch 12: Ecosystem"
       ]
     };
 
@@ -541,38 +278,24 @@
     const QUESTION_BANK = {
       "10-math-std": [
         { type: "mcq", marks: 1, section: "Section A", topic: "Real Numbers & Euclid's Lemma", question: "If two positive integers a and b are written as a = x³y² and b = xy³, where x, y are prime numbers, then HCF(a, b) is:", options: ["xy", "xy²", "x³y³", "x²y²"], correctIndex: 1, explanation: "HCF is the product of the smallest power of each common prime factor. Here, smallest power of x is x¹ and smallest power of y is y², so HCF(a, b) = xy²." },
-        { type: "ar", marks: 1, section: "Section A", topic: "Quadratic Equations — Discriminant", assertion: "The quadratic equation 2x² - 4x + 3 = 0 has no real roots.", reason: "A quadratic equation ax² + bx + c = 0 has no real roots when its discriminant D = b² - 4ac < 0.", options: [...STANDARD_AR_OPTIONS], correctIndex: 0, explanation: "Here a = 2, b = -4, c = 3. Discriminant D = (-4)² - 4(2)(3) = 16 - 24 = -8 < 0. Hence, no real roots exist and R accurately explains A." },
+        { type: "ar", marks: 1, section: "Section A", topic: "Quadratic Equations — Discriminant", assertion: "The quadratic equation 2x² - 4x + 3 = 0 has no real roots.", reason: "A quadratic equation ax² + bx + c = 0 has no real roots when its discriminant D = b² - 4ac < 0.", options: ["Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.", "Both A and R are true but R is NOT the correct explanation of A.", "Assertion (A) is true but Reason (R) is false.", "Assertion (A) is false but Reason (R) is true."], correctIndex: 0, explanation: "Here a = 2, b = -4, c = 3. Discriminant D = (-4)² - 4(2)(3) = 16 - 24 = -8 < 0. Hence, no real roots exist and R accurately explains A." },
         { type: "competency", marks: 4, section: "Section E", topic: "Applications of Trigonometry (Heights & Distances)", passageType: "Case Study", passage: "A lighthouse of height 60 m stands vertically on a sea cliff. From the top of the lighthouse, the angles of depression of two ships approaching the cliff directly behind one another are observed to be 30° and 45°.", question: "Based on the given scenario, what is the distance between the two ships? (Use √3 = 1.732)", options: ["43.92 m", "60.00 m", "103.92 m", "34.64 m"], correctIndex: 0, explanation: "Distance of nearer ship (45°): d₁ = 60 / tan 45° = 60 m. Distance of farther ship (30°): d₂ = 60 / tan 30° = 60√3 = 60 × 1.732 = 103.92 m. Distance between ships = d₂ - d₁ = 103.92 - 60 = 43.92 m." },
-        { type: "short", marks: 3, section: "Section C", topic: "Arithmetic Progressions", question: "Find the sum of the first 22 terms of an AP in which d = 7 and the 22nd term is 149.", modelAnswer: "1. Given: n = 22, common difference d = 7, and a₂₂ = 149.
-2. Using aₙ = a + (n - 1)d => 149 = a + (22 - 1)(7) => 149 = a + 147 => a = 2.
-3. Sum of n terms: S₂₂ = (22/2)(a + a₂₂) = 11(2 + 149) = 11 × 151 = 1661.", valuePoints: ["Identify a_n = a + (n-1)d formula (1M)", "Calculate first term a = 2 accurately (1M)", "Apply S_n = n/2 (a + l) to get 1661 (1M)"] },
-        { type: "long", marks: 5, section: "Section D", topic: "Triangles — Basic Proportionality Theorem (Thales Theorem)", question: "State and prove Basic Proportionality Theorem (Thales Theorem). Using it, prove that a line drawn through the mid-point of one side of a triangle parallel to another side bisects the third side.", modelAnswer: "1. Statement: If a line is drawn parallel to one side of a triangle to intersect the other two sides in distinct points, the other two sides are divided in the same ratio.
-2. Construction: In △ABC, DE || BC. Join BE, CD and draw DM ⊥ AC, EN ⊥ AB.
-3. Proof: ar(△ADE)/ar(△BDE) = AD/DB and ar(△ADE)/ar(△CDE) = AE/EC. Since △BDE and △CDE lie on the same base DE and between parallels DE || BC, their areas are equal, giving AD/DB = AE/EC.
-4. Application: Since D is mid-point of AB, AD/DB = 1 => AE/EC = 1 => AE = EC.", valuePoints: ["Correct statement & neat labelled figure (1M)", "Given, To Prove, Construction steps (1M)", "Area ratio derivation proving AD/DB = AE/EC (2M)", "Deduction for mid-point bisection (1M)"] }
+        { type: "short", marks: 3, section: "Section C", topic: "Arithmetic Progressions", question: "Find the sum of the first 22 terms of an AP in which d = 7 and the 22nd term is 149.", modelAnswer: "1. Given: n = 22, common difference d = 7, and a₂₂ = 149.\n2. Using aₙ = a + (n - 1)d => 149 = a + (22 - 1)(7) => 149 = a + 147 => a = 2.\n3. Sum of n terms: S₂₂ = (22/2)(a + a₂₂) = 11(2 + 149) = 11 × 151 = 1661.", valuePoints: ["Identify a_n = a + (n-1)d formula (1M)", "Calculate first term a = 2 accurately (1M)", "Apply S_n = n/2 (a + l) to get 1661 (1M)"] },
+        { type: "long", marks: 5, section: "Section D", topic: "Triangles — Basic Proportionality Theorem (Thales Theorem)", question: "State and prove Basic Proportionality Theorem (Thales Theorem). Using it, prove that a line drawn through the mid-point of one side of a triangle parallel to another side bisects the third side.", modelAnswer: "1. Statement: If a line is drawn parallel to one side of a triangle to intersect the other two sides in distinct points, the other two sides are divided in the same ratio.\n2. Construction: In △ABC, DE || BC. Join BE, CD and draw DM ⊥ AC, EN ⊥ AB.\n3. Proof: ar(△ADE)/ar(△BDE) = AD/DB and ar(△ADE)/ar(△CDE) = AE/EC. Since △BDE and △CDE lie on the same base DE and between parallels DE || BC, their areas are equal, giving AD/DB = AE/EC.\n4. Application: Since D is mid-point of AB, AD/DB = 1 => AE/EC = 1 => AE = EC.", valuePoints: ["Correct statement & neat labelled figure (1M)", "Given, To Prove, Construction steps (1M)", "Area ratio derivation proving AD/DB = AE/EC (2M)", "Deduction for mid-point bisection (1M)"] }
       ],
       "10-science": [
         { type: "mcq", marks: 1, section: "Section A", topic: "Chemical Reactions & Equations", question: "When ferrous sulphate crystals are heated strongly in a dry boiling tube, the colour changes from green to reddish-brown due to the formation of:", options: ["Ferrous oxide (FeO)", "Ferric oxide (Fe₂O₃)", "Sulphur trioxide (SO₃)", "Ferrous sulphide (FeS)"], correctIndex: 1, explanation: "2FeSO₄(s) → Fe₂O₃(s) + SO₂(g) + SO₃(g). Green hydrated ferrous sulphate decomposes thermally into reddish-brown ferric oxide (Fe₂O₃) with pungent SO₂ and SO₃ gases." },
-        { type: "ar", marks: 1, section: "Section A", topic: "Light — Reflection & Refraction", assertion: "A convex mirror is always preferred as a rear-view mirror in vehicles.", reason: "A convex mirror always forms a virtual, erect, and diminished image and provides a wider field of view.", options: [...STANDARD_AR_OPTIONS], correctIndex: 0, explanation: "Convex mirrors diverge light rays outward, giving drivers a significantly wider field of view while keeping images upright (erect)." },
+        { type: "ar", marks: 1, section: "Section A", topic: "Light — Reflection & Refraction", assertion: "A convex mirror is always preferred as a rear-view mirror in vehicles.", reason: "A convex mirror always forms a virtual, erect, and diminished image and provides a wider field of view.", options: ["Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.", "Both A and R are true but R is NOT the correct explanation of A.", "Assertion (A) is true but Reason (R) is false.", "Assertion (A) is false but Reason (R) is true."], correctIndex: 0, explanation: "Convex mirrors diverge light rays outward, giving drivers a significantly wider field of view while keeping images upright (erect)." },
         { type: "competency", marks: 4, section: "Section E", topic: "Electricity — Ohm's Law & Series/Parallel Circuits", passageType: "Case Study", passage: "A student connects three resistors of resistances 2 Ω, 3 Ω, and 6 Ω in parallel across a 6 V battery with an ammeter in the main branch.", question: "What is the equivalent resistance of the combination and the total current read by the ammeter?", options: ["1 Ω and 6 A", "11 Ω and 0.54 A", "1 Ω and 1 A", "3 Ω and 2 A"], correctIndex: 0, explanation: "1/Rp = 1/2 + 1/3 + 1/6 = (3 + 2 + 1)/6 = 1 => Rp = 1 Ω. By Ohm's law, I = V / Rp = 6 / 1 = 6 A." },
-        { type: "short", marks: 3, section: "Section C", topic: "Life Processes — Human Heart Double Circulation", question: "Why is it necessary to separate oxygenated and deoxygenated blood in mammals and birds? Explain double circulation briefly.", modelAnswer: "1. Mammals and birds are warm-blooded animals with high energy needs to maintain a constant body temperature.
-2. Separating oxygenated and deoxygenated blood prevents mixing and ensures highly efficient oxygen supply to body tissues.
-3. Double circulation: Blood passes through the heart twice in one complete cycle — pulmonary circulation (heart to lungs and back) and systemic circulation (heart to body and back).", valuePoints: ["High energy demand for thermoregulation (1M)", "Prevention of mixing for efficient O2 delivery (1M)", "Definition of pulmonary & systemic circulation (1M)"] },
-        { type: "long", marks: 5, section: "Section D", topic: "Carbon & Its Compounds — Ethanol & Ethanoic Acid", question: "Write the chemical equation for esterification and saponification reactions. How can ethanol and ethanoic acid be distinguished chemically?", modelAnswer: "1. Esterification: CH₃COOH + C₂H₅OH → CH₃COOC₂H₅ + H₂O (in presence of Conc. H₂SO₄, sweet-smelling ethyl ethanoate).
-2. Saponification: CH₃COOC₂H₅ + NaOH → CH₃COONa + C₂H₅OH.
-3. Chemical Test: Add sodium hydrogen carbonate (NaHCO₃) to both. Ethanoic acid produces brisk effervescence of CO₂ gas (turns lime water milky), whereas ethanol shows no reaction.", valuePoints: ["Balanced esterification equation with catalyst (1.5M)", "Balanced saponification equation (1.5M)", "Sodium bicarbonate test with observation (2M)"] }
+        { type: "short", marks: 3, section: "Section C", topic: "Life Processes — Human Heart Double Circulation", question: "Why is it necessary to separate oxygenated and deoxygenated blood in mammals and birds? Explain double circulation briefly.", modelAnswer: "1. Mammals and birds are warm-blooded animals with high energy needs to maintain a constant body temperature.\n2. Separating oxygenated and deoxygenated blood prevents mixing and ensures highly efficient oxygen supply to body tissues.\n3. Double circulation: Blood passes through the heart twice in one complete cycle — pulmonary circulation (heart to lungs and back) and systemic circulation (heart to body and back).", valuePoints: ["High energy demand for thermoregulation (1M)", "Prevention of mixing for efficient O2 delivery (1M)", "Definition of pulmonary & systemic circulation (1M)"] },
+        { type: "long", marks: 5, section: "Section D", topic: "Carbon & Its Compounds — Ethanol & Ethanoic Acid", question: "Write the chemical equation for esterification and saponification reactions. How can ethanol and ethanoic acid be distinguished chemically?", modelAnswer: "1. Esterification: CH₃COOH + C₂H₅OH → CH₃COOC₂H₅ + H₂O (in presence of Conc. H₂SO₄, sweet-smelling ethyl ethanoate).\n2. Saponification: CH₃COOC₂H₅ + NaOH → CH₃COONa + C₂H₅OH.\n3. Chemical Test: Add sodium hydrogen carbonate (NaHCO₃) to both. Ethanoic acid produces brisk effervescence of CO₂ gas (turns lime water milky), whereas ethanol shows no reaction.", valuePoints: ["Balanced esterification equation with catalyst (1.5M)", "Balanced saponification equation (1.5M)", "Sodium bicarbonate test with observation (2M)"] }
       ],
       "12-phy": [
         { type: "mcq", marks: 1, section: "Section A", topic: "Electrostatics — Gauss's Law", question: "A point charge +q is placed at the centre of a cube of side L. The electric flux emerging from any one face of the cube is:", options: ["q / ε₀", "q / 6ε₀", "q / 4ε₀", "6q / ε₀"], correctIndex: 1, explanation: "By Gauss's Law, total flux through the closed cube is Φ = q / ε₀. By symmetry across 6 identical faces, flux through one face is q / 6ε₀." },
-        { type: "ar", marks: 1, section: "Section A", topic: "Dual Nature of Radiation & Matter", assertion: "Photoelectric current increases linearly with an increase in intensity of incident light (above threshold frequency).", reason: "Higher intensity means a larger number of photons striking the metal surface per unit time, ejecting more photoelectrons.", options: [...STANDARD_AR_OPTIONS], correctIndex: 0, explanation: "In Einstein's quantum picture, one photon ejects one electron. Increasing intensity increases photon flux, thereby increasing photoelectron emission rate proportionally." },
+        { type: "ar", marks: 1, section: "Section A", topic: "Dual Nature of Radiation & Matter", assertion: "Photoelectric current increases linearly with an increase in intensity of incident light (above threshold frequency).", reason: "Higher intensity means a larger number of photons striking the metal surface per unit time, ejecting more photoelectrons.", options: ["Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.", "Both A and R are true but R is NOT the correct explanation of A.", "Assertion (A) is true but Reason (R) is false.", "Assertion (A) is false but Reason (R) is true."], correctIndex: 0, explanation: "In Einstein's quantum picture, one photon ejects one electron. Increasing intensity increases photon flux, thereby increasing photoelectron emission rate proportionally." },
         { type: "competency", marks: 4, section: "Section D", topic: "Ray Optics — Lens Maker's Formula", passageType: "Case Study", passage: "An equiconvex lens made of crown glass (μ = 1.5) has a focal length of 20 cm in air. The lens is then completely immersed in water (μ_w = 1.33).", question: "What happens to the focal length of the equiconvex lens when immersed in water?", options: ["It increases to approximately 78.2 cm (remains converging).", "It decreases to 5 cm.", "It becomes negative (acts as a diverging lens).", "It remains unchanged at 20 cm."], correctIndex: 0, explanation: "By Lens Maker's formula, fw / fa = (μg - 1) / (μg/μw - 1) = 0.5 / (1.5/1.33 - 1) ≈ 0.5 / 0.1278 ≈ 3.91 => fw ≈ 78.2 cm." },
-        { type: "short", marks: 3, section: "Section C", topic: "Moving Charges & Magnetism — Biot-Savart Law", question: "Using Biot-Savart Law, derive an expression for the magnetic field at the centre of a circular current-carrying coil of radius R having N turns.", modelAnswer: "1. According to Biot-Savart Law, dB = (μ₀ / 4π) · (I dl sinθ / r²).
-2. For a circular loop, dl ⊥ r (θ = 90°) and r = R.
-3. Integrating over the circumference (∮ dl = 2πR) for N turns: B = (μ₀ I / 4πR²) · (2πR) · N = μ₀ N I / 2R.", valuePoints: ["Biot-Savart vector/scalar expression (1M)", "Perpendicularity condition & integration (1M)", "Final result B = μ₀NI / 2R with direction (1M)"] },
-        { type: "long", marks: 5, section: "Section E", topic: "Wave Optics — Young's Double Slit Experiment (YDSE)", question: "Derive the expression for fringe width in Young's Double Slit Experiment. How does fringe width change if (i) screen distance is doubled, and (ii) monochromatic red light is replaced by blue light?", modelAnswer: "1. Path difference at point P at distance y from central maxima: Δx = y·d / D.
-2. For bright fringes, y·d / D = nλ => yₙ = nλD / d.
-3. Fringe width β = yₙ₊₁ - yₙ = λD / d.
-4. Effects: (i) If D is doubled, β doubles. (ii) Since λ_blue < λ_red, fringe width β decreases.", valuePoints: ["Path difference derivation Δx = yd/D (2M)", "Fringe width β = λD/d formula (1M)", "Effect of doubling D & changing wavelength (2M)"] }
+        { type: "short", marks: 3, section: "Section C", topic: "Moving Charges & Magnetism — Biot-Savart Law", question: "Using Biot-Savart Law, derive an expression for the magnetic field at the centre of a circular current-carrying coil of radius R having N turns.", modelAnswer: "1. According to Biot-Savart Law, dB = (μ₀ / 4π) · (I dl sinθ / r²).\n2. For a circular loop, dl ⊥ r (θ = 90°) and r = R.\n3. Integrating over the circumference (∮ dl = 2πR) for N turns: B = (μ₀ I / 4πR²) · (2πR) · N = μ₀ N I / 2R.", valuePoints: ["Biot-Savart vector/scalar expression (1M)", "Perpendicularity condition & integration (1M)", "Final result B = μ₀NI / 2R with direction (1M)"] },
+        { type: "long", marks: 5, section: "Section E", topic: "Wave Optics — Young's Double Slit Experiment (YDSE)", question: "Derive the expression for fringe width in Young's Double Slit Experiment. How does fringe width change if (i) screen distance is doubled, and (ii) monochromatic red light is replaced by blue light?", modelAnswer: "1. Path difference at point P at distance y from central maxima: Δx = y·d / D.\n2. For bright fringes, y·d / D = nλ => yₙ = nλD / d.\n3. Fringe width β = yₙ₊₁ - yₙ = λD / d.\n4. Effects: (i) If D is doubled, β doubles. (ii) Since λ_blue < λ_red, fringe width β decreases.", valuePoints: ["Path difference derivation Δx = yd/D (2M)", "Fringe width β = λD/d formula (1M)", "Effect of doubling D & changing wavelength (2M)"] }
       ]
     };
 
@@ -739,10 +462,7 @@
               },
               {
                 role: "user",
-                content: `${prompt}
-
-Return valid JSON strictly matching this schema:
-${schemaGuide}`
+                content: `${prompt}\n\nReturn valid JSON strictly matching this schema:\n${schemaGuide}`
               }
             ]
           })
@@ -758,45 +478,30 @@ ${schemaGuide}`
         return extractJsonObject(rawText);
       }
 
-      // Direct Google Gemini API mode (with automatic fallback across active Gemini endpoints)
-      const primaryModelId = model.includes("/") ? model.split("/").pop() : model;
-      const candidateModels = Array.from(new Set([
-        primaryModelId,
-        "gemini-3.8-flash",
-        "gemini-3.6-flash",
-        "gemini-3.5-flash-lite",
-        "gemini-3-flash-preview"
-      ]));
+      // Direct Google Gemini API mode
+      const effectiveModelId = model.includes("/") ? model.split("/").pop() : model;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModelId)}:generateContent?key=${encodeURIComponent(cleanKey)}`;
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema,
+            temperature: 0.35
+          }
+        })
+      });
 
-      let lastError = null;
-      for (const candidateModel of candidateModels) {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(candidateModel)}:generateContent?key=${encodeURIComponent(cleanKey)}`;
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema,
-              temperature: 0.35
-            }
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          return extractJsonObject(rawText);
-        }
-
+      if (!res.ok) {
         const errText = await res.text();
-        lastError = new Error(`Gemini API Error (${res.status} on ${candidateModel}): ${errText}`);
-        if (res.status !== 404) {
-          throw lastError;
-        }
+        throw new Error(`Gemini API Error (${res.status}): ${errText}`);
       }
-      throw lastError;
+
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      return extractJsonObject(rawText);
     }
 
     // --- Topic-Targeted Internet Study Links Generator ---
@@ -838,17 +543,17 @@ ${schemaGuide}`
         if (filtered.length > 0) {
           const template = filtered[i % filtered.length];
           const cycle = Math.floor(i / filtered.length);
-          generated.push(normalizeQuestion({
+          generated.push({
             ...template,
             id: `${subject.id}-q-${i + 1}`,
             qNumber: i + 1,
             question: cycle === 0 ? template.question : `[Set ${cycle + 1} Practice] ${template.question}`
-          }, i, subject));
+          });
         } else {
           const fmtId = activeFormats[i % activeFormats.length];
           const fmtMeta = QUESTION_FORMATS.find((f) => f.id === fmtId) || QUESTION_FORMATS[0];
           const isSubjective = fmtId === "short" || fmtId === "long";
-          generated.push(normalizeQuestion({
+          generated.push({
             id: `${subject.id}-q-${i + 1}`,
             qNumber: i + 1,
             type: fmtId,
@@ -860,7 +565,12 @@ ${schemaGuide}`
             assertion: fmtId === "ar" ? `In ${subject.name}, fundamental principles of Unit ${(i % 4) + 1} govern standard experimental outcomes.` : null,
             reason: fmtId === "ar" ? `CBSE competency guidelines emphasize conceptual cause-and-effect reasoning over rote memorization.` : null,
             question: fmtId === "ar" ? "Evaluate Assertion (A) and Reason (R) carefully:" : isSubjective ? `Explain the core principle and real-world application of ${subject.name} (Unit ${(i % 5) + 1}) with suitable examples as per CBSE Marking Scheme.` : `Which statement best aligns with NCERT Class ${classLevel} ${subject.name} for Unit ${(i % 5) + 1}?`,
-            options: isSubjective ? null : fmtId === "ar" ? [...STANDARD_AR_OPTIONS] : [
+            options: isSubjective ? null : fmtId === "ar" ? [
+              "Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.",
+              "Both A and R are true but R is NOT the correct explanation of A.",
+              "Assertion (A) is true but Reason (R) is false.",
+              "Assertion (A) is false but Reason (R) is true."
+            ] : [
               "Direct proportional relationship verified under NCERT standard conditions",
               "Inverse variation independent of boundary constraints",
               "Constant invariant state across all non-equilibrium phases",
@@ -868,11 +578,9 @@ ${schemaGuide}`
             ],
             correctIndex: isSubjective ? null : 0,
             explanation: `As per NCERT Class ${classLevel} ${subject.name} guidelines, standard boundary conditions establish a direct conceptual relationship for Unit ${(i % 5) + 1}.`,
-            modelAnswer: isSubjective ? `1. Core Definition: State the fundamental NCERT definition clearly.
-2. Analytical Explanation: Break down the mechanism/derivation step-by-step.
-3. Conclusion/Example: Conclude with a textbook-verified application.` : null,
+            modelAnswer: isSubjective ? `1. Core Definition: State the fundamental NCERT definition clearly.\n2. Analytical Explanation: Break down the mechanism/derivation step-by-step.\n3. Conclusion/Example: Conclude with a textbook-verified application.` : null,
             valuePoints: isSubjective ? ["Accurate NCERT definition & terminology (1M)", "Step-by-step reasoning / diagram / example (2M)"] : null
-          }, i, subject));
+          });
         }
       }
       return generated;
@@ -916,7 +624,7 @@ ${schemaGuide}`
             definition: `Questions from ${cleanTitle} in CBSE board exams test both conceptual distinction (Assertion-Reason / 1M MCQs) and multi-step analytical derivation (3M Short & 5M Long Answers).`,
             keyFormula: `Step 1: Given Data → Step 2: Governing Formula → Step 3: Unit & Conclusion`,
             example: `When comparing two contrasting cases within ${cleanTitle}, tabulate at least three distinct points (Definition, Mechanism, and Real-World Example) to secure full marks in 3-mark CBSE questions.`,
-            examTip: `Add your Gemini or OpenRouter API Key in the top bar to generate custom, deep-dive AI notes, worked numericals, and tailored SVG diagrams for any chapter!`,
+            examTip: `Add your Gemini API Key in the top bar to generate custom, deep-dive AI notes, worked numericals, and tailored SVG diagrams for any chapter!`,
             diagramCaption: `CBSE 3-Step Structured Answer Blueprint`,
             svgDiagram: `<svg viewBox="0 0 420 150" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md">
               <rect width="420" height="150" rx="12" fill="#f8fafc"/>
@@ -966,7 +674,6 @@ ${schemaGuide}`
       const [selectedChapter, setSelectedChapter] = useState("");
       const [chapterNotesCache, setChapterNotesCache] = useState({});
       const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
-      const [isElaboratingTopic, setIsElaboratingTopic] = useState(false);
       const [activeTopicIdx, setActiveTopicIdx] = useState(0);
       const [notesError, setNotesError] = useState("");
 
@@ -977,7 +684,6 @@ ${schemaGuide}`
       const [markedReview, setMarkedReview] = useState({});
       const [secondsElapsed, setSecondsElapsed] = useState(0);
       const [paletteDrawerOpen, setPaletteDrawerOpen] = useState(false);
-      const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
 
       // Saved Papers & Scorecard State
       const [savedPapers, setSavedPapers] = useState(() => {
@@ -1045,7 +751,7 @@ ${schemaGuide}`
         );
       };
 
-      // --- Live AI Question Generation with Structured Output & Normalization ---
+      // --- OPTION B: Live Gemini AI Question Generation with Structured Output ---
       const handleStartExam = async () => {
         const cappedCount = Math.min(questionCount, selectedSubject.maxQuestions);
         setIsGeneratingPaper(true);
@@ -1070,10 +776,9 @@ ${schemaGuide}`
             const prompt = `You are an expert CBSE Board Exam paper setter in India. Generate exactly ${cappedCount} original, exam-standard questions for CBSE Class ${classLevel} ${selectedSubject.name} (Subject Code: ${selectedSubject.code}).
 Allowed question types: [${formatNames}]. Use type codes strictly from: "mcq", "ar", "competency", "short", "long".
 ${langInstruction}
-Mandatory Rules for EVERY question:
-- For "mcq", "ar", and "competency": ALWAYS provide 4 distinct options in 'options', ALWAYS set 'correctIndex' (integer 0, 1, 2, or 3), and ALWAYS provide a clear step-by-step 'explanation' (Uttar).
-- For "ar" (Assertion-Reason): populate 'assertion' and 'reason', and set 'options' to these exact 4 choices:
-  ["Both Assertion (A) and Reason (R) are true and R is the correct explanation of A.", "Both Assertion (A) and Reason (R) are true but R is NOT the correct explanation of A.", "Assertion (A) is true but Reason (R) is false.", "Assertion (A) is false but Reason (R) is true."]
+Rules:
+- For "mcq", "ar", and "competency": provide exactly 4 options in 'options', set 'correctIndex' (0-3), and give a clear step-by-step 'explanation'.
+- For "ar" (Assertion-Reason): populate 'assertion' and 'reason', and use standard CBSE A/R 4 options.
 - For "short" (3M) and "long" (5M): leave 'options' empty [], set 'correctIndex' to 0, and provide a complete 'modelAnswer' plus CBSE 'valuePoints' array.`;
 
             const schema = {
@@ -1099,15 +804,14 @@ Mandatory Rules for EVERY question:
                       modelAnswer: { type: "STRING" },
                       valuePoints: { type: "ARRAY", items: { type: "STRING" } }
                     },
-                    required: ["type", "marks", "section", "topic", "question", "options", "correctIndex", "explanation"]
+                    required: ["type", "marks", "section", "topic", "question"]
                   }
                 }
               },
               required: ["questions"]
             };
 
-            const aiResult = await callUniversalAiStructured({
-              provider: aiProvider,
+            const aiResult = await callUniversalAiStructured({ provider: aiProvider,
               apiKey: apiKey.trim(),
               model: effectiveModel,
               prompt,
@@ -1115,21 +819,16 @@ Mandatory Rules for EVERY question:
             });
 
             if (aiResult?.questions?.length > 0) {
-              questions = aiResult.questions.slice(0, cappedCount).map((q, idx) =>
-                normalizeQuestion(
-                  {
-                    ...q,
-                    id: `${selectedSubject.id}-ai-${Date.now()}-${idx + 1}`,
-                    qNumber: idx + 1
-                  },
-                  idx,
-                  selectedSubject
-                )
-              );
+              questions = aiResult.questions.slice(0, cappedCount).map((q, idx) => ({
+                ...q,
+                id: `${selectedSubject.id}-ai-${Date.now()}-${idx + 1}`,
+                qNumber: idx + 1,
+                options: q.type === "short" || q.type === "long" ? null : (q.options && q.options.length === 4 ? q.options : ["Option A", "Option B", "Option C", "Option D"])
+              }));
               sourceMode = `${aiProvider === 'openrouter' ? 'OpenRouter' : 'Gemini'} (${effectiveModel})`;
             }
           } catch (err) {
-            console.warn("AI fallback triggered:", err);
+            console.warn("Gemini AI fallback triggered:", err);
             setCopyFeedback("AI API unreachable or key invalid — loaded CBSE built-in bank.");
             setTimeout(() => setCopyFeedback(""), 4000);
           }
@@ -1219,8 +918,7 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
             required: ["chapterSummary", "topics"]
           };
 
-          const aiNotes = await callUniversalAiStructured({
-            provider: aiProvider,
+          const aiNotes = await callUniversalAiStructured({ provider: aiProvider,
             apiKey: apiKey.trim(),
             model: effectiveModel,
             prompt,
@@ -1241,122 +939,6 @@ Break the chapter down into 4 to 6 essential NCERT syllabus topics. For EACH top
         }
       };
 
-      // --- AI Elaborated Deep-Dive Generator for Individual Topic ---
-      const handleElaborateTopic = async (topicIdx) => {
-        if (!selectedChapter || !currentChapterNotes?.topics?.[topicIdx]) return;
-        const targetTopic = currentChapterNotes.topics[topicIdx];
-
-        if (!apiKey.trim()) {
-          const fallbackElab = {
-            deepExplanation: `Detailed NCERT Analysis of ${targetTopic.title}: In CBSE Class ${classLevel} ${selectedSubject.name} (${selectedChapter}), examiners test both conceptual precision and multi-step reasoning. Start your board answer by defining the core terms explicitly, stating all governing conditions or assumptions, and connecting cause-and-effect logically across each step.`,
-            stepByStepDerivation: [
-              `Step 1 — Identify Given Parameters & NCERT Law: Extract all numerical quantities, variables, or textual clues and write the exact governing principle for ${targetTopic.title}.`,
-              `Step 2 — Systematic Substitution & Transformation: Apply standard SI units / grammatical or analytical rules cleanly without skipping intermediate steps.`,
-              `Step 3 — Final Verification & Board Conclusion: Box the final numerical result with units (or highlight the concluding inference) as expected in the CBSE Marking Scheme.`
-            ],
-            boardExamQuestions: [
-              {
-                q: `[CBSE 3M Short Answer] Explain the core principle of ${targetTopic.title} with a neat labelled diagram or suitable example.`,
-                ans: `1. State the exact NCERT definition (${targetTopic.definition.slice(0, 120)}...). 2. Draw a clean labelled diagram or write the governing equation (${targetTopic.keyFormula}). 3. Conclude with the worked application.`
-              },
-              {
-                q: `[CBSE 1M Assertion-Reason / Competency] What happens when boundary conditions in ${targetTopic.title} are altered?`,
-                ans: `Apply the direct/inverse proportionality from ${targetTopic.keyFormula} to determine the exact shift in output.`
-              }
-            ],
-            commonMistakes: [
-              "Omitting SI units, sign conventions, or proper labelling in diagrams (loses 0.5–1 mark).",
-              "Writing vague summaries instead of exact NCERT keywords required by the CBSE Marking Scheme."
-            ]
-          };
-
-          const updatedTopics = currentChapterNotes.topics.map((t, i) =>
-            i === topicIdx ? { ...t, elaboration: fallbackElab } : t
-          );
-          setChapterNotesCache((prev) => ({
-            ...prev,
-            [activeNotesKey]: { ...currentChapterNotes, topics: updatedTopics }
-          }));
-          setCopyFeedback("Generated structured CBSE elaboration (connect AI key for custom deep-dive).");
-          setTimeout(() => setCopyFeedback(""), 3500);
-          return;
-        }
-
-        setNotesError("");
-        setIsElaboratingTopic(true);
-        try {
-          const prompt = `You are a senior CBSE Board Examiner and NCERT subject specialist for Class ${classLevel} ${selectedSubject.name} (Code ${selectedSubject.code}).
-Chapter: ${selectedChapter}
-Topic to Elaborate: ${targetTopic.title}
-Existing Summary: ${targetTopic.definition}
-
-Generate a comprehensive, deeply elaborated study module for this specific topic so a student can score 100% on any 1M, 3M, 4M Case-Based, or 5M Long Answer CBSE board question:
-1. 'deepExplanation': Detailed, thorough multi-paragraph NCERT conceptual breakdown covering underlying principles, edge cases, exceptions, and real-world/laboratory context.
-2. 'stepByStepDerivation': An array of 3 to 5 clear sequential steps (derivation, proof, mechanism, or analytical framework).
-3. 'boardExamQuestions': An array of 2 to 3 likely CBSE Board Exam questions (mix of 3M/5M/Competency) with complete model answers ('q' and 'ans').
-4. 'commonMistakes': An array of 2 to 3 specific pitfalls students make in CBSE board exams on this topic and how to avoid them.`;
-
-          const schema = {
-            type: "OBJECT",
-            properties: {
-              deepExplanation: { type: "STRING" },
-              stepByStepDerivation: { type: "ARRAY", items: { type: "STRING" } },
-              boardExamQuestions: {
-                type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    q: { type: "STRING" },
-                    ans: { type: "STRING" }
-                  },
-                  required: ["q", "ans"]
-                }
-              },
-              commonMistakes: { type: "ARRAY", items: { type: "STRING" } }
-            },
-            required: ["deepExplanation", "stepByStepDerivation", "boardExamQuestions", "commonMistakes"]
-          };
-
-          const elabResult = await callUniversalAiStructured({
-            provider: aiProvider,
-            apiKey: apiKey.trim(),
-            model: effectiveModel,
-            prompt,
-            responseSchema: schema
-          });
-
-          if (elabResult?.deepExplanation) {
-            const updatedTopics = currentChapterNotes.topics.map((t, i) =>
-              i === topicIdx ? { ...t, elaboration: elabResult } : t
-            );
-            setChapterNotesCache((prev) => ({
-              ...prev,
-              [activeNotesKey]: {
-                ...currentChapterNotes,
-                isAiGenerated: true,
-                topics: updatedTopics
-              }
-            }));
-          }
-        } catch (err) {
-          setNotesError(`Could not generate elaborated content: ${err.message}`);
-        } finally {
-          setIsElaboratingTopic(false);
-        }
-      };
-
-      const handleTerminateExamWithoutSaving = () => {
-        setExitConfirmOpen(false);
-        setActivePaper(null);
-        setUserAnswers({});
-        setMarkedReview({});
-        setSecondsElapsed(0);
-        setCurrentIdx(0);
-        setActiveTab("practice");
-        setCopyFeedback("Practice test terminated. Returned to subject selection.");
-        setTimeout(() => setCopyFeedback(""), 3500);
-      };
-
       const handleSubmitExam = () => {
         if (!activePaper) return;
         let autoScore = 0;
@@ -1364,11 +946,7 @@ Generate a comprehensive, deeply elaborated study module for this specific topic
         let objectiveTotal = 0;
         let objectiveCorrect = 0;
 
-        const normalizedQuestions = activePaper.questions.map((rawQ, idx) =>
-          normalizeQuestion(rawQ, idx, activePaper.subject)
-        );
-
-        normalizedQuestions.forEach((q) => {
+        activePaper.questions.forEach((q) => {
           maxMarks += q.marks;
           if (q.type !== "short" && q.type !== "long") {
             objectiveTotal += 1;
@@ -1387,7 +965,7 @@ Generate a comprehensive, deeply elaborated study module for this specific topic
           studentName,
           classLevel: activePaper.classLevel,
           subject: activePaper.subject,
-          questions: normalizedQuestions,
+          questions: activePaper.questions,
           userAnswers,
           subjectiveScores: {},
           autoScore,
@@ -1417,20 +995,13 @@ Generate a comprehensive, deeply elaborated study module for this specific topic
         );
       };
 
-      const activeResult = useMemo(() => {
-        const found = savedPapers.find((p) => p.id === activeResultId) || savedPapers[0] || null;
-        if (!found) return null;
-        return {
-          ...found,
-          questions: (found.questions || []).map((q, idx) => normalizeQuestion(q, idx, found.subject))
-        };
-      }, [savedPapers, activeResultId]);
+      const activeResult = useMemo(
+        () => savedPapers.find((p) => p.id === activeResultId) || savedPapers[0] || null,
+        [savedPapers, activeResultId]
+      );
 
       const handleShareScore = (paper) => {
-        const msg = `🎯 Uttar (उत्तर) CBSE Class ${paper.classLevel} Challenge!
-Subject: ${paper.subject.name} (${paper.subject.code})
-Score: ${paper.totalScore}/${paper.maxMarks} | Accuracy: ${paper.accuracy}% | Time: ${formatTime(paper.timeTaken)}
-Compare Code: ${paper.challengeCode}`;
+        const msg = `🎯 Uttar (उत्तर) CBSE Class ${paper.classLevel} Challenge!\nSubject: ${paper.subject.name} (${paper.subject.code})\nScore: ${paper.totalScore}/${paper.maxMarks} | Accuracy: ${paper.accuracy}% | Time: ${formatTime(paper.timeTaken)}\nCompare Code: ${paper.challengeCode}`;
         if (navigator.clipboard) {
           navigator.clipboard.writeText(msg);
           setCopyFeedback("Challenge code & scorecard copied! Share it with your friends.");
@@ -1528,7 +1099,7 @@ Compare Code: ${paper.challengeCode}`;
               <div className="flex items-center gap-2">
                 {activeTab === "exam" ? (
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-mono font-bold text-xs sm:text-sm">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-mono font-bold text-sm">
                       <Icon name="clock" className="w-4 h-4" />
                       <span>{formatTime(secondsElapsed)}</span>
                     </div>
@@ -1540,16 +1111,8 @@ Compare Code: ${paper.challengeCode}`;
                       <Icon name="grid" className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => setExitConfirmOpen(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold transition"
-                      title="Terminate test early or exit to Practice"
-                    >
-                      <Icon name="logOut" className="w-4 h-4" />
-                      <span>Exit Test</span>
-                    </button>
-                    <button
                       onClick={handleSubmitExam}
-                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-sm"
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-sm"
                     >
                       Submit
                     </button>
@@ -1563,7 +1126,7 @@ Compare Code: ${paper.challengeCode}`;
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
                       }`}
-                      title="Configure Gemini / OpenRouter AI Key"
+                      title="Configure Gemini AI Key"
                     >
                       <Icon name="key" className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">{apiKey.trim() ? `AI Active (${aiProvider === "openrouter" ? "OpenRouter" : "Gemini"})` : "Set Universal AI Key"}</span>
@@ -1709,7 +1272,7 @@ Compare Code: ${paper.challengeCode}`;
             {activeTab === "practice" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-7 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                         CBSE Class {classLevel} Subjects
@@ -1717,33 +1280,6 @@ Compare Code: ${paper.challengeCode}`;
                       <p className="text-xs sm:text-sm text-slate-500">
                         Select a subject to generate live AI or CBSE-blueprint practice papers, or open tailored chapter notes.
                       </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {activePaper && (
-                        <button
-                          onClick={() => setActiveTab("exam")}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition"
-                        >
-                          <Icon name="clock" className="w-3.5 h-3.5" />
-                          <span>Resume Test</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setActivePaper(null);
-                          setUserAnswers({});
-                          setMarkedReview({});
-                          setStreamFilter("All");
-                          setSelectedFormats(["mcq", "ar", "competency", "short", "long"]);
-                          setQuestionCount(Math.min(5, selectedSubject.maxQuestions));
-                          setActiveTab("notes");
-                        }}
-                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-200 text-xs font-bold transition"
-                        title="Exit Practice Section"
-                      >
-                        <Icon name="logOut" className="w-3.5 h-3.5" />
-                        <span>Exit Practice</span>
-                      </button>
                     </div>
                   </div>
 
@@ -1979,6 +1515,7 @@ Compare Code: ${paper.challengeCode}`;
             {/* ==================== 2. AI TAILORED CHAPTER NOTES & DIAGRAMS ==================== */}
             {activeTab === "notes" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column: Subject & Chapter Selector */}
                 <div className="lg:col-span-4 space-y-4">
                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
                     <div>
@@ -2045,6 +1582,7 @@ Compare Code: ${paper.challengeCode}`;
                   </div>
                 </div>
 
+                {/* Right Column: Topics, Definitions, Examples & Diagrams */}
                 <div className="lg:col-span-8 space-y-5">
                   <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -2055,7 +1593,7 @@ Compare Code: ${paper.challengeCode}`;
                           </span>
                           {currentChapterNotes?.isAiGenerated && (
                             <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              ✨ Live AI Notes
+                              ✨ Live Gemini AI Notes
                             </span>
                           )}
                         </div>
@@ -2089,6 +1627,7 @@ Compare Code: ${paper.challengeCode}`;
                       </div>
                     )}
 
+                    {/* Topic Pills Navigation */}
                     {currentChapterNotes?.topics?.length > 0 && (
                       <div className="pt-2 border-t border-slate-100 space-y-2">
                         <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -2114,36 +1653,22 @@ Compare Code: ${paper.challengeCode}`;
                     )}
                   </div>
 
+                  {/* Active Topic Detailed Card: Definition + Formula + Example + SVG Diagram */}
                   {currentChapterNotes?.topics?.[activeTopicIdx] && (() => {
                     const topic = currentChapterNotes.topics[activeTopicIdx];
                     const links = getTopicConceptLinks(selectedSubject, topic.title).slice(0, 3);
                     return (
                       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-sm space-y-6">
-                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                          <div>
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
-                              Topic {activeTopicIdx + 1} of {currentChapterNotes.topics.length}
-                            </span>
-                            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
-                              {topic.title}
-                            </h3>
-                          </div>
-                          <button
-                            disabled={isElaboratingTopic}
-                            onClick={() => handleElaborateTopic(activeTopicIdx)}
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-slate-950 text-xs font-extrabold shadow-sm transition shrink-0"
-                          >
-                            <Icon name="bookOpen" className="w-4 h-4" />
-                            <span>
-                              {isElaboratingTopic
-                                ? "Elaborating Topic..."
-                                : topic.elaboration
-                                ? "Refresh Elaborated Content"
-                                : "Generate Elaborated Content"}
-                            </span>
-                          </button>
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                            {topic.title}
+                          </h3>
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700">
+                            Topic {activeTopicIdx + 1} of {currentChapterNotes.topics.length}
+                          </span>
                         </div>
 
+                        {/* Definition Block */}
                         <div className="space-y-1.5">
                           <div className="text-xs font-extrabold uppercase tracking-wider text-indigo-600">
                             NCERT Definition & Concept Explanation
@@ -2153,6 +1678,7 @@ Compare Code: ${paper.challengeCode}`;
                           </p>
                         </div>
 
+                        {/* Formula / Core Rule Highlight */}
                         {topic.keyFormula && (
                           <div className="p-3.5 rounded-xl bg-indigo-50/80 border border-indigo-200">
                             <div className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-800 mb-1">
@@ -2164,6 +1690,7 @@ Compare Code: ${paper.challengeCode}`;
                           </div>
                         )}
 
+                        {/* Labelled Diagram Block */}
                         {topic.svgDiagram && (
                           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
                             <div className="flex items-center justify-between">
@@ -2184,6 +1711,7 @@ Compare Code: ${paper.challengeCode}`;
                           </div>
                         )}
 
+                        {/* Worked Example */}
                         <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1.5">
                           <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-800">
                             Relevant Solved Example & Application
@@ -2193,6 +1721,7 @@ Compare Code: ${paper.challengeCode}`;
                           </p>
                         </div>
 
+                        {/* CBSE Board Exam Tip */}
                         {topic.examTip && (
                           <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
                             <Icon name="lightbulb" className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -2203,64 +1732,7 @@ Compare Code: ${paper.challengeCode}`;
                           </div>
                         )}
 
-                        {topic.elaboration && (
-                          <div className="p-5 rounded-2xl bg-indigo-50/70 border-2 border-indigo-200 space-y-4">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-indigo-600 text-white">
-                                Elaborated NCERT Deep-Dive & Board Prep
-                              </span>
-                              <span className="text-[11px] font-bold text-indigo-800">5M & Case-Study Ready</span>
-                            </div>
-
-                            <div className="space-y-1.5">
-                              <div className="text-xs font-extrabold text-indigo-950">Comprehensive Conceptual Breakdown:</div>
-                              <p className="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-                                {topic.elaboration.deepExplanation}
-                              </p>
-                            </div>
-
-                            {topic.elaboration.stepByStepDerivation?.length > 0 && (
-                              <div className="bg-white p-4 rounded-xl border border-indigo-100 space-y-2">
-                                <div className="text-xs font-extrabold text-indigo-900">
-                                  Step-by-Step Derivation / Analytical Framework:
-                                </div>
-                                <ol className="list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-slate-800">
-                                  {topic.elaboration.stepByStepDerivation.map((step, sIdx) => (
-                                    <li key={sIdx} className="leading-relaxed">{step}</li>
-                                  ))}
-                                </ol>
-                              </div>
-                            )}
-
-                            {topic.elaboration.boardExamQuestions?.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="text-xs font-extrabold text-indigo-950">
-                                  High-Yield CBSE Board Questions & Model Answers:
-                                </div>
-                                <div className="space-y-2.5">
-                                  {topic.elaboration.boardExamQuestions.map((bq, bIdx) => (
-                                    <div key={bIdx} className="bg-white p-3.5 rounded-xl border border-indigo-100 space-y-1">
-                                      <div className="text-xs font-extrabold text-slate-900">{bq.q}</div>
-                                      <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{bq.ans}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {topic.elaboration.commonMistakes?.length > 0 && (
-                              <div className="bg-rose-50/80 p-3.5 rounded-xl border border-rose-200 space-y-1">
-                                <div className="text-xs font-extrabold text-rose-800">Common Board Exam Pitfalls to Avoid:</div>
-                                <ul className="list-disc list-inside text-xs text-rose-950 space-y-0.5">
-                                  {topic.elaboration.commonMistakes.map((cm, cIdx) => (
-                                    <li key={cIdx}>{cm}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
+                        {/* External NCERT / DIKSHA Reference Links */}
                         <div className="pt-2 border-t border-slate-100 space-y-2">
                           <div className="text-xs font-extrabold text-slate-700 flex items-center gap-1.5">
                             <Icon name="globe" className="w-4 h-4 text-indigo-600" />
@@ -2296,13 +1768,8 @@ Compare Code: ${paper.challengeCode}`;
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-8 space-y-4">
                   {(() => {
-                    const q = normalizeQuestion(activePaper.questions[currentIdx], currentIdx, activePaper.subject);
+                    const q = activePaper.questions[currentIdx];
                     const isSubjective = q.type === "short" || q.type === "long";
-                    const displayOptions = isSubjective
-                      ? []
-                      : (q.options && q.options.length > 0
-                          ? q.options
-                          : (q.type === "ar" ? STANDARD_AR_OPTIONS : []));
                     return (
                       <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-sm space-y-5">
                         <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -2344,20 +1811,16 @@ Compare Code: ${paper.challengeCode}`;
                           </div>
                         )}
 
-                        {q.type === "ar" && (q.assertion || q.reason) && (
+                        {q.type === "ar" && q.assertion && (
                           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-sm">
-                            {q.assertion && (
-                              <div>
-                                <span className="font-extrabold text-slate-900">Assertion (A): </span>
-                                <span className="text-slate-800">{q.assertion}</span>
-                              </div>
-                            )}
-                            {q.reason && (
-                              <div>
-                                <span className="font-extrabold text-slate-900">Reason (R): </span>
-                                <span className="text-slate-800">{q.reason}</span>
-                              </div>
-                            )}
+                            <div>
+                              <span className="font-extrabold text-slate-900">Assertion (A): </span>
+                              <span className="text-slate-800">{q.assertion}</span>
+                            </div>
+                            <div>
+                              <span className="font-extrabold text-slate-900">Reason (R): </span>
+                              <span className="text-slate-800">{q.reason}</span>
+                            </div>
                           </div>
                         )}
 
@@ -2385,7 +1848,7 @@ Compare Code: ${paper.challengeCode}`;
                           </div>
                         ) : (
                           <div className="space-y-2.5">
-                            {displayOptions.map((opt, idx) => {
+                            {(q.options || []).map((opt, idx) => {
                               const picked = userAnswers[q.id] === idx;
                               const letter = String.fromCharCode(65 + idx);
                               return (
@@ -2413,23 +1876,14 @@ Compare Code: ${paper.challengeCode}`;
                         )}
 
                         <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              disabled={currentIdx === 0}
-                              onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
-                              className="flex items-center gap-1 px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50"
-                            >
-                              <Icon name="chevronLeft" className="w-4 h-4" />
-                              <span>Previous</span>
-                            </button>
-                            <button
-                              onClick={() => setExitConfirmOpen(true)}
-                              className="flex items-center gap-1 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-xs font-bold text-rose-700 transition"
-                            >
-                              <Icon name="logOut" className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Terminate Test</span>
-                            </button>
-                          </div>
+                          <button
+                            disabled={currentIdx === 0}
+                            onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
+                            className="flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 disabled:opacity-40 hover:bg-slate-50"
+                          >
+                            <Icon name="chevronLeft" className="w-4 h-4" />
+                            <span>Previous</span>
+                          </button>
 
                           <button
                             onClick={() =>
@@ -2592,21 +2046,10 @@ Compare Code: ${paper.challengeCode}`;
                   <h2 className="text-lg font-extrabold text-slate-900">
                     Question-by-Question Review & CBSE Marking Scheme
                   </h2>
-                  {activeResult.questions.map((rawQ, qIdx) => {
-                    const q = normalizeQuestion(rawQ, qIdx, activeResult.subject);
+                  {activeResult.questions.map((q) => {
                     const isSub = q.type === "short" || q.type === "long";
                     const userAns = activeResult.userAnswers[q.id];
                     const isCorrect = !isSub && userAns === q.correctIndex;
-                    const resolvedOptions = isSub ? [] : (q.options || (q.type === "ar" ? STANDARD_AR_OPTIONS : []));
-                    const safeCorrectIdx = !isSub && resolvedOptions.length > 0
-                      ? (typeof q.correctIndex === "number" && q.correctIndex >= 0 && q.correctIndex < resolvedOptions.length ? q.correctIndex : 0)
-                      : 0;
-                    const correctLetter = String.fromCharCode(65 + safeCorrectIdx);
-                    const correctOptionText = resolvedOptions[safeCorrectIdx] || "Option A";
-                    const userOptionText = typeof userAns === "number" && resolvedOptions[userAns]
-                      ? `(${String.fromCharCode(65 + userAns)}) ${resolvedOptions[userAns]}`
-                      : "Not Attempted";
-
                     return (
                       <div key={q.id} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
                         <div className="flex items-center justify-between gap-2">
@@ -2629,23 +2072,6 @@ Compare Code: ${paper.challengeCode}`;
                           )}
                         </div>
 
-                        {q.type === "ar" && (q.assertion || q.reason) && (
-                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs sm:text-sm">
-                            {q.assertion && (
-                              <div>
-                                <span className="font-extrabold text-slate-900">Assertion (A): </span>
-                                <span className="text-slate-700">{q.assertion}</span>
-                              </div>
-                            )}
-                            {q.reason && (
-                              <div>
-                                <span className="font-extrabold text-slate-900">Reason (R): </span>
-                                <span className="text-slate-700">{q.reason}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
                         <p className="font-bold text-slate-900 text-sm sm:text-base">{q.question}</p>
 
                         {isSub ? (
@@ -2655,7 +2081,7 @@ Compare Code: ${paper.challengeCode}`;
                               <span className="text-slate-600">{userAns || "No written answer submitted."}</span>
                             </div>
                             <div className="text-xs whitespace-pre-line text-slate-800 bg-white p-3 rounded-lg border border-slate-200">
-                              <div className="font-extrabold text-indigo-700 mb-1">CBSE Model Solution (उत्तर):</div>
+                              <div className="font-extrabold text-indigo-700 mb-1">CBSE Model Solution:</div>
                               {q.modelAnswer}
                             </div>
                             <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -2676,23 +2102,13 @@ Compare Code: ${paper.challengeCode}`;
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs sm:text-sm space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                              <div>
-                                <span className="font-bold text-slate-600">Your Response: </span>
-                                <span className={isCorrect ? "font-bold text-emerald-700" : "font-semibold text-rose-700"}>
-                                  {userOptionText}
-                                </span>
-                              </div>
+                          <div className="text-xs sm:text-sm space-y-1.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                            <div>
+                              <span className="font-bold text-emerald-700">Correct Answer: </span>
+                              <span className="font-semibold text-slate-900">{q.options?.[q.correctIndex]}</span>
                             </div>
-                            <div className="p-2.5 rounded-lg bg-emerald-50/80 border border-emerald-200">
-                              <span className="font-extrabold text-emerald-800">Correct Answer: </span>
-                              <span className="font-bold text-emerald-950">
-                                ({correctLetter}) {correctOptionText}
-                              </span>
-                            </div>
-                            <div className="text-slate-700 leading-relaxed">
-                              <span className="font-extrabold text-slate-900">Uttar (Explanation): </span>
+                            <div className="text-slate-600">
+                              <span className="font-bold text-slate-800">Uttar (Explanation): </span>
                               {q.explanation}
                             </div>
                           </div>
@@ -2802,7 +2218,6 @@ Compare Code: ${paper.challengeCode}`;
                 ) : (
                   <div className="space-y-4">
                     {activeResult.questions
-                      .map((rawQ, idx) => normalizeQuestion(rawQ, idx, activeResult.subject))
                       .filter((q) => {
                         const isSub = q.type === "short" || q.type === "long";
                         if (solutionFilter === "subjective") return isSub;
@@ -2813,10 +2228,6 @@ Compare Code: ${paper.challengeCode}`;
                       })
                       .map((q) => {
                         const isSub = q.type === "short" || q.type === "long";
-                        const resolvedOptions = isSub ? [] : (q.options || (q.type === "ar" ? STANDARD_AR_OPTIONS : []));
-                        const safeCorrectIdx = !isSub && resolvedOptions.length > 0
-                          ? (typeof q.correctIndex === "number" && q.correctIndex >= 0 && q.correctIndex < resolvedOptions.length ? q.correctIndex : 0)
-                          : 0;
                         const topicLinks = getTopicConceptLinks(activeResult.subject, q.topic).slice(0, 3);
                         return (
                           <div key={q.id} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-4 shadow-sm">
@@ -2831,23 +2242,6 @@ Compare Code: ${paper.challengeCode}`;
                                 {q.section} • {q.marks}M
                               </span>
                             </div>
-
-                            {q.type === "ar" && (q.assertion || q.reason) && (
-                              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs sm:text-sm">
-                                {q.assertion && (
-                                  <div>
-                                    <span className="font-extrabold text-slate-900">Assertion (A): </span>
-                                    <span className="text-slate-700">{q.assertion}</span>
-                                  </div>
-                                )}
-                                {q.reason && (
-                                  <div>
-                                    <span className="font-extrabold text-slate-900">Reason (R): </span>
-                                    <span className="text-slate-700">{q.reason}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
 
                             <p className="font-bold text-slate-900 text-base">{q.question}</p>
 
@@ -2876,7 +2270,7 @@ Compare Code: ${paper.challengeCode}`;
                               ) : (
                                 <>
                                   <div className="text-sm font-extrabold text-emerald-950">
-                                    Correct Option: ({String.fromCharCode(65 + safeCorrectIdx)}) {resolvedOptions[safeCorrectIdx]}
+                                    Correct Option: {q.options?.[q.correctIndex]}
                                   </div>
                                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
                                     {q.explanation}
@@ -3089,51 +2483,6 @@ Compare Code: ${paper.challengeCode}`;
               </div>
             )}
           </main>
-
-          {/* Early Test Termination / Exit Confirmation Modal */}
-          {exitConfirmOpen && activeTab === "exam" && (
-            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4">
-                <div className="flex items-center gap-2.5 text-rose-700">
-                  <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
-                    <Icon name="logOut" className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900">Terminate Practice Test Early?</h3>
-                    <p className="text-xs text-slate-500">
-                      Answered {Object.keys(userAnswers).length} of {activePaper?.questions?.length || 0} questions ({formatTime(secondsElapsed)} elapsed)
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  You can either <strong>Submit &amp; Score</strong> your attempted answers right now, or <strong>Terminate &amp; Exit</strong> back to the Practice section without saving.
-                </p>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
-                  <button
-                    onClick={() => setExitConfirmOpen(false)}
-                    className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Continue Test
-                  </button>
-                  <button
-                    onClick={() => {
-                      setExitConfirmOpen(false);
-                      handleSubmitExam();
-                    }}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
-                  >
-                    Submit &amp; Score Now
-                  </button>
-                  <button
-                    onClick={handleTerminateExamWithoutSaving}
-                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
-                  >
-                    Terminate &amp; Exit
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Mobile Bottom Navigation Bar */}
           {activeTab !== "exam" && (
